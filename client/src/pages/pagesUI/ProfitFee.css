@@ -1,0 +1,61 @@
+/* Profit Fee Calculator */
+.profit-fee-card {
+  background: #f8fafc;
+  padding: 1.5rem;
+  border-radius: 12px;
+  max-width: 500px;
+  margin-top: 1.5rem;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 1rem;
+}
+
+.form-group label {
+  font-weight: 600;
+  margin-bottom: 0.4rem;
+}
+
+.form-group input {
+  padding: 0.6rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+}
+
+.result-card {
+  margin-top: 1.2rem;
+  padding: 1rem;
+  background: #e2e8f0;
+  border-radius: 10px;
+}
+.history-btn {
+  margin-top: 1rem;
+  padding: 0.6rem 1rem;
+  background: #1e293b;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.history-card {
+  margin-top: 1.5rem;
+  padding: 1rem;
+  background: #f1f5f9;
+  border-radius: 12px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+}
+
+.history-card ul {
+  list-style: none;
+  padding: 0;
+}
+
+.history-card li {
+  margin-bottom: 1rem;
+  padding-bottom: 0.6rem;
+  border-bottom: 1px solid #cbd5e1;
+}

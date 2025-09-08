@@ -5,43 +5,46 @@ export const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
+  const [token, setToken] = useState(localStorage.getItem("token") || null);
   const [loading, setLoading] = useState(true);
 
-  // Load user if token exists
   useEffect(() => {
-    const token = localStorage.getItem("token");
     if (token) {
       getProfile(token)
         .then((res) => setUser(res.data))
-        .catch(() => setUser(null))
+        .catch(() => {
+          setUser(null);
+          setToken(null);
+          localStorage.removeItem("token");
+        })
         .finally(() => setLoading(false));
     } else {
       setLoading(false);
     }
-  }, []);
+  }, [token]);
 
-  // Register
   const register = async (formData) => {
     const res = await registerUser(formData);
     localStorage.setItem("token", res.data.token);
-    setUser(res.data);
+    setToken(res.data.token);
+    setUser(res.data.user); // assuming API sends { token, user }
   };
 
-  // Login
   const login = async (formData) => {
     const res = await loginUser(formData);
     localStorage.setItem("token", res.data.token);
-    setUser(res.data);
+    setToken(res.data.token);
+    setUser(res.data.user);
   };
 
-  // Logout
   const logout = () => {
     localStorage.removeItem("token");
     setUser(null);
+    setToken(null);
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, register, login, logout }}>
+    <AuthContext.Provider value={{ user, token, loading, register, login, logout }}>
       {children}
     </AuthContext.Provider>
   );
