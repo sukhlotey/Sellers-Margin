@@ -131,6 +131,7 @@ export const bulkSaveProfit = async (req, res) => {
 };
 
 // ✅ Get grouped bulk uploads
+// ✅ Get grouped bulk uploads
 export const getBulkHistory = async (req, res) => {
   try {
     const bulk = await ProfitFee.aggregate([
@@ -139,7 +140,7 @@ export const getBulkHistory = async (req, res) => {
         $group: {
           _id: "$batchId",
           createdAt: { $first: "$createdAt" },
-          count: { $sum: 1 },
+          recordsCount: { $sum: 1 },   // ✅ use recordsCount instead of count
         },
       },
       { $sort: { createdAt: -1 } },
@@ -149,6 +150,7 @@ export const getBulkHistory = async (req, res) => {
     res.status(500).json({ message: "Error fetching bulk history", error: error.message });
   }
 };
+
 
 // ✅ Fetch products of a single bulk upload
 export const getBulkDetails = async (req, res) => {
@@ -161,9 +163,14 @@ export const getBulkDetails = async (req, res) => {
   }
 };
 // GET → fetch history
+// GET → fetch history (only manual single-product records)
 export const getProfitHistory = async (req, res) => {
   try {
-    const history = await ProfitFee.find({ userId: req.user._id }).sort({ createdAt: -1 });
+    const history = await ProfitFee.find({
+      userId: req.user._id,
+      isBulk: { $ne: true },   // ✅ exclude bulk uploads
+    }).sort({ createdAt: -1 });
+
     res.json(history);
   } catch (error) {
     res.status(500).json({ message: "Error fetching history", error: error.message });

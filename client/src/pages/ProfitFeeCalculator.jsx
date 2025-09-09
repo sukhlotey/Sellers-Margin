@@ -2,14 +2,12 @@ import { useState } from "react";
 import ProfitFeeForm from "./ProfitFeeForm";
 import ProfitFeeHistory from "./ProfitFeeHistory";
 import DashboardLayout from "../layout/DashboardLayout";
-import BulkUploadModal from "./BulkUploadModal";
-import BulkHistory from "./BulkHistory";
+import BulkUploadModal from "./BulkUploadModal"; // ✅ new modal component
 import "./pagesUI/ProfitFee.css";
+import BulkHistory from "./BulkHistory";
 
 const ProfitFeeCalculator = () => {
   const [showHistory, setShowHistory] = useState(false);
-  const [showBulkModal, setShowBulkModal] = useState(false);
-  const [showBulkHistory, setShowBulkHistory] = useState(false);
 
   return (
     <DashboardLayout>
@@ -17,36 +15,38 @@ const ProfitFeeCalculator = () => {
         <h2>💰 Profit & Fee Calculator</h2>
         <p>Quickly calculate your profit after Amazon/Flipkart fees & GST.</p>
 
-        <div className="actions">
-          <button onClick={() => setShowBulkModal(true)}>📦 Bulk Upload</button>
-          <button onClick={() => setShowBulkHistory((prev) => !prev)}>
-            {showBulkHistory ? "Hide Bulk History" : "Show Bulk History"}
-          </button>
-        </div>
-{showBulkHistory && <BulkHistory />}
-
         <div className="calculator-container">
-          {/* Left Column */}
+          {/* Left Column: Calculator Form and Result */}
           <div className="calculator-column">
             <ProfitFeeForm />
+
+            {/* Bulk Upload Button (Bootstrap trigger) */}
+            <button
+              className="btn btn-primary mt-3"
+              data-bs-toggle="modal"
+              data-bs-target="#bulkUploadModal"
+            >
+              📦 Bulk Upload
+            </button>
           </div>
 
-          {/* Right Column */}
+          {/* Right Column: History Toggle and History */}
           <div className="history-column">
             <button
-              className="history-btn"
+              className="btn btn-secondary mb-2"
               onClick={() => setShowHistory((prev) => !prev)}
             >
               {showHistory ? "Hide History" : "Show History"}
             </button>
             {showHistory && <ProfitFeeHistory />}
+            <hr />
+  <BulkHistory />
           </div>
         </div>
-
-        {showBulkModal && (
-          <BulkUploadModal onClose={() => setShowBulkModal(false)} />
-        )}
       </div>
+
+      {/* ✅ Bootstrap Modal Component */}
+      <BulkUploadModal />
     </DashboardLayout>
   );
 };

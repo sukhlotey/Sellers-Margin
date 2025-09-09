@@ -3,19 +3,17 @@ import { createContext, useState } from "react";
 export const ProfitFeeContext = createContext();
 
 export const ProfitFeeProvider = ({ children }) => {
-  const [history, setHistory] = useState([]);       // single records
-  const [bulkHistory, setBulkHistory] = useState([]); // bulk batches
+  const [history, setHistory] = useState([]);
+  const [bulkHistory, setBulkHistory] = useState([]);
 
+  // Add new record locally after save
   const addToHistory = (record) => {
-    setHistory((prev) => [record, ...prev]);
+    setHistory((prev) => [record, ...prev]); // prepend new record
   };
 
   return (
     <ProfitFeeContext.Provider
-      value={{
-        history, setHistory, addToHistory,
-        bulkHistory, setBulkHistory
-      }}
+      value={{ history, setHistory, addToHistory, bulkHistory, setBulkHistory }}
     >
       {children}
     </ProfitFeeContext.Provider>

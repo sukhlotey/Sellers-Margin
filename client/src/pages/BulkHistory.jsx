@@ -8,6 +8,7 @@ const BulkHistory = () => {
   const { token } = useContext(AuthContext);
   const { bulkHistory, setBulkHistory } = useContext(ProfitFeeContext);
   const [selectedBatch, setSelectedBatch] = useState(null);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     const fetchBulkHistory = async () => {
@@ -22,6 +23,24 @@ const BulkHistory = () => {
     };
     fetchBulkHistory();
   }, [token, setBulkHistory]);
+
+  const handleViewDetails = async (batch) => {
+    try {
+      setLoading(true);
+      const res = await axios.get(
+        `http://localhost:5000/api/profit-fee/bulk/${batch._id}`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      setSelectedBatch({
+        ...batch,
+        records: res.data, // ✅ attach fetched records
+      });
+    } catch (err) {
+      console.error("Error fetching batch details", err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   if (selectedBatch) {
     return (
@@ -47,7 +66,9 @@ const BulkHistory = () => {
                 <br />
                 {batch.recordsCount} records
               </div>
-              <button onClick={() => setSelectedBatch(batch)}>View Details</button>
+              <button onClick={() => handleViewDetails(batch)}>
+                {loading ? "Loading..." : "View Details"}
+              </button>
             </li>
           ))}
         </ul>

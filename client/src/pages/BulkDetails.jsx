@@ -56,26 +56,30 @@ const BulkDetails = ({ batch, onBack }) => {
         <button onClick={downloadExcel}>Download Excel</button>
       </div>
 
-      <table>
-        <thead>
-          <tr>
-            <th>Product</th>
-            <th>Selling Price</th>
-            <th>Cost Price</th>
-            <th>Profit</th>
-          </tr>
-        </thead>
-        <tbody>
-          {records.map((item, idx) => (
-            <tr key={idx}>
-              <td>{item.productName}</td>
-              <td>{item.sellingPrice}</td>
-              <td>{item.costPrice}</td>
-              <td>{item.profit?.toFixed(2)}</td>
+      <div className="table-responsive">
+        <table className="table table-bordered table-sm">
+          <thead className="table-light">
+            <tr>
+              <th>Product</th>
+              <th>Selling Price</th>
+              <th>Cost Price</th>
+              <th>Profit</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {records.map((item, idx) => (
+              <tr key={idx}>
+                <td>{item.productName}</td>
+                <td>{item.sellingPrice}</td>
+                <td>{item.costPrice}</td>
+                <td className={item.profit >= 0 ? "text-success" : "text-danger"}>
+                  ₹{item.profit?.toFixed(2)}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 };

@@ -98,7 +98,7 @@
 
 /* Desktop sidebar */
 .sidebar.desktop {
-  width: 220px;
+  width: 250px;
   position: fixed;
   top: 0; /* align with top of screen */
   left: -260px;
@@ -219,9 +219,9 @@ body, html {
 }
 
 .dashboard-container.sidebar-open .navbar {
-  margin-left: 230px;
+  margin-left: 250px;
   width: calc(100% - 250px);
-  max-width: calc(100% - 270px); /* prevent overflow */
+  /* max-width: calc(100% - 270px); */
 }
 .dashboard-container.sidebar-open .footer {
   margin-left: 230px;
