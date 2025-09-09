@@ -2,6 +2,9 @@ import { useState, useContext } from "react";
 import axios from "axios";
 import { AuthContext } from "../context/AuthContext";
 import { ProfitFeeContext } from "../context/ProfitFeeContext";
+import { CiCalculator2 } from "react-icons/ci";
+import { IoSaveOutline } from "react-icons/io5";
+import { RiDeleteBin7Line } from "react-icons/ri";
 
 const ProfitFeeForm = () => {
   const { token } = useContext(AuthContext);
@@ -15,14 +18,13 @@ const ProfitFeeForm = () => {
     gstPercent: 18,
     adCost: 0,
     category: "General",
-    weightSlab: "0-500", // dropdown selection
+    weightSlab: "0-500",
     customWeight: "",
     customShipping: "",
   });
 
   const [result, setResult] = useState(null);
 
-  // 🔹 Shipping cost rules by weight slab
   const getShippingCost = (slab, customShipping) => {
     if (slab === "custom") return Number(customShipping) || 0;
     switch (slab) {
@@ -33,7 +35,6 @@ const ProfitFeeForm = () => {
     }
   };
 
-  // 🔹 Extract numeric weight from slab
   const getWeight = (slab, customWeight) => {
     if (slab === "custom") return Number(customWeight) || 0;
     switch (slab) {
@@ -44,13 +45,12 @@ const ProfitFeeForm = () => {
     }
   };
 
-  // 🔹 Category auto commission %
   const getCommission = (category) => {
     switch (category) {
       case "Electronics": return 8;
       case "Books": return 5;
       case "Fashion": return 15;
-      default: return 15; // General
+      default: return 15;
     }
   };
 
@@ -63,7 +63,6 @@ const ProfitFeeForm = () => {
     }
   };
 
-  // 🧮 Calculate
   const calculate = () => {
     const sp = Number(inputs.sellingPrice);
     const cp = Number(inputs.costPrice);
@@ -95,11 +94,10 @@ const ProfitFeeForm = () => {
       gstTax,
       profit,
       breakEvenPrice,
-      weight, // ✅ numeric
+      weight,
     });
   };
 
-  // 💾 Save to DB
   const saveRecord = async () => {
     if (!result) {
       alert("Please calculate first!");
@@ -121,7 +119,7 @@ const ProfitFeeForm = () => {
           gstTax: Number(result.gstTax),
           profit: Number(result.profit),
           breakEvenPrice: Number(result.breakEvenPrice),
-          weight: Number(result.weight), // ✅ always numeric
+          weight: Number(result.weight),
         },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -132,15 +130,28 @@ const ProfitFeeForm = () => {
     }
   };
 
+  const handleClear=() => {
+    setInputs({
+      productName: "",
+      sellingPrice: "",
+      costPrice: "",
+      commissionPercent: 15,
+      gstPercent: 18,
+      adCost: 0,
+      category: "General",
+      weightSlab: "0-500",
+      customWeight: "",
+      customShipping: "",
+    });
+    setResult(null);
+  }
   return (
     <div className="profit-fee-card">
-      {/* Product */}
       <div className="form-group">
         <label>Product Name</label>
         <input name="productName" value={inputs.productName} onChange={handleChange} />
       </div>
 
-      {/* Prices */}
       <div className="form-group">
         <label>Selling Price (₹)</label>
         <input type="number" name="sellingPrice" value={inputs.sellingPrice} onChange={handleChange} />
@@ -150,10 +161,10 @@ const ProfitFeeForm = () => {
         <input type="number" name="costPrice" value={inputs.costPrice} onChange={handleChange} />
       </div>
 
-      {/* Category */}
       <div className="form-group">
         <label>Category</label>
         <select name="category" value={inputs.category} onChange={handleChange}>
+          <option value="">--Select Category--</option>
           <option value="General">General (15%)</option>
           <option value="Electronics">Electronics (8%)</option>
           <option value="Fashion">Fashion (15%)</option>
@@ -161,10 +172,10 @@ const ProfitFeeForm = () => {
         </select>
       </div>
 
-      {/* Weight */}
       <div className="form-group">
         <label>Weight Slab</label>
         <select name="weightSlab" value={inputs.weightSlab} onChange={handleChange}>
+          <option value="">--Select Weight Slab--</option>
           <option value="0-500">0 - 500g (₹40)</option>
           <option value="501-1000">501g - 1kg (₹70)</option>
           <option value="1001-5000">1kg - 5kg (₹120)</option>
@@ -191,7 +202,6 @@ const ProfitFeeForm = () => {
         )}
       </div>
 
-      {/* Other Costs */}
       <div className="form-group">
         <label>Ad Cost (₹)</label>
         <input type="number" name="adCost" value={inputs.adCost} onChange={handleChange} />
@@ -207,13 +217,11 @@ const ProfitFeeForm = () => {
         <input type="number" name="gstPercent" value={inputs.gstPercent} onChange={handleChange} />
       </div>
 
-      {/* Actions */}
-      <button onClick={calculate}>🧮 Calculate</button>
-      <button onClick={saveRecord}>💾 Save</button>
-
-      {/* Result */}
+      <button className="calc-btn" onClick={calculate}><CiCalculator2 /> Calculate</button>
+      <button className="calc-btn" onClick={saveRecord}><IoSaveOutline /> Save</button>
+      <button className="clear-btn" onClick={handleClear}><RiDeleteBin7Line/> Clear</button>
       {result && (
-        <div className="result-card">
+        <div className={`result-card ${result.profit >= 0 ? 'profit-positive' : 'profit-negative'}`}>
           <p><strong>{result.productName}</strong></p>
           <p>Commission Fee: ₹{result.commissionFee.toFixed(2)}</p>
           <p>GST Tax: ₹{result.gstTax.toFixed(2)}</p>

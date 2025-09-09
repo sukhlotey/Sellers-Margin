@@ -1,5 +1,6 @@
 import express from "express";
-import { calculateProfit,calculateAndSaveProfit,getProfitHistory } from "../controllers/profitController.js";
+import { calculateProfit,calculateAndSaveProfit,getProfitHistory,bulkSaveProfit,getBulkHistory,
+  getBulkDetails } from "../controllers/profitController.js";
 import { protect } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
@@ -8,5 +9,7 @@ const router = express.Router();
 router.post("/calculate",protect, calculateProfit);
 router.get("/history",protect, getProfitHistory);
 router.post("/save", protect, calculateAndSaveProfit);
-
+router.post("/bulk-save", protect, bulkSaveProfit);
+router.get("/bulk/history", protect, getBulkHistory);
+router.get("/bulk/:batchId", protect, getBulkDetails);
 export default router;

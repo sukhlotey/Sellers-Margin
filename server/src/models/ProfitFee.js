@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import { v4 as uuidv4 } from "uuid";
 
 const profitFeeSchema = new mongoose.Schema(
   {
@@ -11,11 +12,15 @@ const profitFeeSchema = new mongoose.Schema(
     shippingCost: { type: Number, default: 0 },
     adCost: { type: Number, default: 0 },
     category: { type: String, default: "General" },
-     weight: { type: Number, required: true }, // ✅ always grams // grams
+    weight: { type: Number, required: true },
+
     commissionFee: Number,
     gstTax: Number,
     profit: Number,
     breakEvenPrice: Number,
+
+    batchId: { type: String, default: null }, // same id for all rows in one bulk upload
+    isBulk: { type: Boolean, default: false },
   },
   { timestamps: true }
 );

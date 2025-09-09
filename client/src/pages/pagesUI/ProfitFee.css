@@ -3,7 +3,7 @@
   background: #f8fafc;
   padding: 1.5rem;
   border-radius: 12px;
-  max-width: 500px;
+  max-width: 100%;
   margin-top: 1.5rem;
   box-shadow: 0 2px 6px rgba(0,0,0,0.08);
 }
@@ -17,12 +17,54 @@
 .form-group label {
   font-weight: 600;
   margin-bottom: 0.4rem;
+  color: #1e293b;
 }
 
 .form-group input {
   padding: 0.6rem;
   border: 1px solid #cbd5e1;
   border-radius: 8px;
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.form-group input:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.form-group select {
+  padding: 0.6rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  background: linear-gradient(145deg, #ffffff, #f1f5f9);
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%231e293b' viewBox='0 0 16 16'%3E%3Cpath d='M7.247 11.14L2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.75rem center;
+  background-size: 12px;
+  cursor: pointer;
+  font-size: 0.95rem;
+  color: #1e293b;
+  transition: all 0.3s ease;
+}
+
+.form-group select:hover {
+  border-color: #3b82f6;
+  background-color: #f8fafc;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.form-group select:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  background-color: #fff;
+}
+
+.form-group select option {
+  background: #fff;
+  color: #1e293b;
 }
 
 .result-card {
@@ -30,23 +72,81 @@
   padding: 1rem;
   background: #e2e8f0;
   border-radius: 10px;
+  transition: background-color 0.3s ease;
+}
+
+.result-card.profit-positive {
+  background: #dbeafe; /* Blue shade for positive profit */
+}
+
+.result-card.profit-negative {
+  background: #fee2e2; /* Red shade for negative profit */
+}
+
+.calc-btn {
+  background-color: #052558;
+  border: 0;
+  border-radius: 5px;
+  color: #fff;
+  padding: 10px 15px;
+  margin: 5px;
+  font-size: medium;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.calc-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  cursor: pointer;
+
+}
+
+.clear-btn{
+  background-color: #e11d48;
+  border: 0;
+  border-radius: 5px;
+  color: #fff;
+  padding: 10px 15px;
+  margin: 5px;
+  font-size: medium;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.clear-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  cursor: pointer;
 }
 .history-btn {
-  margin-top: 1rem;
+  margin-bottom: 1rem;
   padding: 0.6rem 1rem;
   background: #1e293b;
   color: white;
   border: none;
   border-radius: 8px;
   cursor: pointer;
+  width: 100%;
+  text-align: center;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.history-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 
 .history-card {
-  margin-top: 1.5rem;
   padding: 1rem;
   background: #f1f5f9;
   border-radius: 12px;
   box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+  max-height: 670px;
+  overflow-y: auto;
 }
 
 .history-card ul {
@@ -58,4 +158,57 @@
   margin-bottom: 1rem;
   padding-bottom: 0.6rem;
   border-bottom: 1px solid #cbd5e1;
+  padding: 0.8rem;
+  border-radius: 8px;
+  transition: background-color 0.3s ease;
+}
+
+.history-card li.profit-positive {
+  background: #dbeafe; /* Blue shade for positive profit */
+}
+
+.history-card li.profit-negative {
+  background: #fee2e2; /* Red shade for negative profit */
+}
+
+.download-btn{
+  background-color: #10b981;
+  border: 0;
+  border-radius: 5px;
+  color: #fff;
+  padding: 10px 12px;
+  margin: 0 5px 5px 0;
+  font-size: medium;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.download-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  cursor: pointer;
+}
+.calculator-container {
+  display: flex;
+  flex-direction: row;
+  gap: 2rem;
+  margin-top: 1.5rem;
+}
+
+.calculator-column {
+  flex: 1;
+  min-width: 0;
+}
+
+.history-column {
+  flex: 1;
+  min-width: 0;
+}
+
+@media (max-width: 768px) {
+  .calculator-container {
+    flex-direction: column;
+    gap: 1rem;
+  }
 }
