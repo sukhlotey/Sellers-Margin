@@ -2,14 +2,15 @@ import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import * as XLSX from "xlsx";
 import { saveAs } from "file-saver";
+import { MdOutlineArrowBack } from "react-icons/md";
+import { FiDownload } from "react-icons/fi";
 
 const BulkDetails = ({ batch, onBack }) => {
   const records = batch.records || [];
 
-  // 📄 Download as PDF
   const downloadPDF = () => {
     const doc = new jsPDF();
-    doc.text(`Bulk Upload Report (${new Date(batch.createdAt).toLocaleString()})`, 14, 10);
+    doc.text(`Bulk Upload Report (${batch.fileName || "Untitled"} - ${new Date(batch.createdAt).toLocaleString()})`, 14, 10);
 
     const tableData = records.map((item) => [
       item.productName,
@@ -23,10 +24,9 @@ const BulkDetails = ({ batch, onBack }) => {
       body: tableData,
     });
 
-    doc.save("bulk_report.pdf");
+    doc.save(`${batch.fileName || "bulk_report"}.pdf`);
   };
 
-  // 📊 Download as Excel
   const downloadExcel = () => {
     const ws = XLSX.utils.json_to_sheet(
       records.map((item) => ({
@@ -41,19 +41,20 @@ const BulkDetails = ({ batch, onBack }) => {
     XLSX.utils.book_append_sheet(wb, ws, "BulkRecords");
     const excelBuffer = XLSX.write(wb, { bookType: "xlsx", type: "array" });
     const data = new Blob([excelBuffer], { type: "application/octet-stream" });
-    saveAs(data, "bulk_report.xlsx");
+    saveAs(data, `${batch.fileName || "bulk_report"}.xlsx`);
   };
 
   return (
     <div className="bulk-details">
-      <button onClick={onBack}>⬅ Back</button>
-      <h3>📊 Bulk Details</h3>
+      <button className="goback" onClick={onBack}><MdOutlineArrowBack/></button>
+      <h3>Bulk Details</h3>
+      <p><strong>File:</strong> {batch.fileName || "Untitled"}</p>
       <p><strong>Uploaded on:</strong> {new Date(batch.createdAt).toLocaleString()}</p>
       <p><strong>Total Records:</strong> {records.length}</p>
 
       <div className="bulk-actions">
-        <button onClick={downloadPDF}>Download PDF</button>
-        <button onClick={downloadExcel}>Download Excel</button>
+        <button className="download-btn" onClick={downloadPDF}><FiDownload/>Download PDF</button>
+        <button className="download-btn" onClick={downloadExcel}><FiDownload/>Download Excel</button>
       </div>
 
       <div className="table-responsive">
@@ -67,8 +68,8 @@ const BulkDetails = ({ batch, onBack }) => {
             </tr>
           </thead>
           <tbody>
-            {records.map((item, idx) => (
-              <tr key={idx}>
+            {records.map((item) => (
+              <tr key={item._id}>
                 <td>{item.productName}</td>
                 <td>{item.sellingPrice}</td>
                 <td>{item.costPrice}</td>

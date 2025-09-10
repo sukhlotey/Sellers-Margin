@@ -21,6 +21,8 @@ const profitFeeSchema = new mongoose.Schema(
 
     batchId: { type: String, default: null }, // same id for all rows in one bulk upload
     isBulk: { type: Boolean, default: false },
+    fileName: { type: String, default: null }, // New field for file name
+
   },
   { timestamps: true }
 );

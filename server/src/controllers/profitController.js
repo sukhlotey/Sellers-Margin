@@ -87,13 +87,13 @@ export const calculateAndSaveProfit = async (req, res) => {
 // Bulk save profit records
 export const bulkSaveProfit = async (req, res) => {
   try {
-    const { records } = req.body; // expects array of objects
+    const { records, fileName } = req.body; // Accept fileName from request
 
     if (!records || !Array.isArray(records) || records.length === 0) {
       return res.status(400).json({ message: "No records provided" });
     }
 
-    const batchId = uuidv4(); // unique id for this upload
+    const batchId = uuidv4();
 
     const enrichedRecords = records.map((r) => {
       const commissionFee = (r.sellingPrice * r.commissionPercent) / 100;
@@ -108,6 +108,7 @@ export const bulkSaveProfit = async (req, res) => {
         userId: req.user._id,
         batchId,
         isBulk: true,
+        fileName, // Save fileName with each record
         commissionFee,
         gstTax,
         profit,
@@ -121,6 +122,7 @@ export const bulkSaveProfit = async (req, res) => {
       message: "Bulk save successful",
       batchId,
       count: saved.length,
+      fileName, // Return fileName in response
     });
   } catch (error) {
     res.status(500).json({
@@ -130,8 +132,6 @@ export const bulkSaveProfit = async (req, res) => {
   }
 };
 
-// ✅ Get grouped bulk uploads
-// ✅ Get grouped bulk uploads
 export const getBulkHistory = async (req, res) => {
   try {
     const bulk = await ProfitFee.aggregate([
@@ -140,7 +140,8 @@ export const getBulkHistory = async (req, res) => {
         $group: {
           _id: "$batchId",
           createdAt: { $first: "$createdAt" },
-          recordsCount: { $sum: 1 },   // ✅ use recordsCount instead of count
+          recordsCount: { $sum: 1 },
+          fileName: { $first: "$fileName" }, // Include fileName in aggregation
         },
       },
       { $sort: { createdAt: -1 } },

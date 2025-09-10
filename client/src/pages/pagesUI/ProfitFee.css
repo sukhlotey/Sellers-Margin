@@ -4,14 +4,26 @@
   padding: 1.5rem;
   border-radius: 12px;
   max-width: 100%;
-  margin-top: 1.5rem;
   box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+}
+
+.profit-fee-monitor {
+  display: flex;
+  gap: 5px;
+}
+
+.card-btn {
+  border: none;
+  border-radius: 50%;
+  font-size: large;
+  line-height: 1;
+  padding: 10px;
 }
 
 .form-group {
   display: flex;
   flex-direction: column;
-  margin-bottom: 1rem;
+  margin-bottom: .5rem;
 }
 
 .form-group label {
@@ -101,10 +113,9 @@
   transform: translateY(-2px);
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
   cursor: pointer;
-
 }
 
-.clear-btn{
+.clear-btn {
   background-color: #e11d48;
   border: 0;
   border-radius: 5px;
@@ -117,11 +128,13 @@
   gap: 0.5rem;
   transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
+
 .clear-btn:hover {
   transform: translateY(-2px);
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
   cursor: pointer;
 }
+
 .history-btn {
   margin-bottom: 1rem;
   padding: 0.6rem 1rem;
@@ -170,8 +183,30 @@
 .history-card li.profit-negative {
   background: #fee2e2; /* Red shade for negative profit */
 }
+.history-card::-webkit-scrollbar {
+  width: 8px; /* Narrow scrollbar */
+}
 
-.download-btn{
+.history-card::-webkit-scrollbar-track {
+  background: #f1f5f9; /* Match container background */
+  border-radius: 4px;
+}
+
+.history-card::-webkit-scrollbar-thumb {
+  background: #cbd5e1; /* Scrollbar color */
+  border-radius: 4px;
+}
+
+.history-card::-webkit-scrollbar-thumb:hover {
+  background: #3b82f6; /* Highlight on hover */
+}
+
+/* Firefox scrollbar styling */
+.history-card {
+  scrollbar-width: thin; /* Thin scrollbar */
+  scrollbar-color: #cbd5e1 #f1f5f9; /* Thumb and track colors */
+}
+.download-btn {
   background-color: #10b981;
   border: 0;
   border-radius: 5px;
@@ -184,11 +219,13 @@
   gap: 0.5rem;
   transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
+
 .download-btn:hover {
   transform: translateY(-2px);
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
   cursor: pointer;
 }
+
 .calculator-container {
   display: flex;
   flex-direction: row;
@@ -204,6 +241,97 @@
 .history-column {
   flex: 1;
   min-width: 0;
+}
+
+.bulk-history-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-top: 1rem;
+  max-height: 600px; /* Set a fixed height for the container */
+  overflow-y: auto; /* Enable vertical scrolling */
+  padding-right: 0.5rem; /* Space for scrollbar */
+  background-color: #f8fafc;
+  padding: 8px;
+  border-radius: 8px;
+}
+
+/* Customize scrollbar for Webkit browsers (Chrome, Safari, Edge) */
+.bulk-history-cards::-webkit-scrollbar {
+  width: 8px; /* Narrow scrollbar */
+}
+
+.bulk-history-cards::-webkit-scrollbar-track {
+  background: #f1f5f9; /* Match container background */
+  border-radius: 4px;
+}
+
+.bulk-history-cards::-webkit-scrollbar-thumb {
+  background: #cbd5e1; /* Scrollbar color */
+  border-radius: 4px;
+}
+
+.bulk-history-cards::-webkit-scrollbar-thumb:hover {
+  background: #3b82f6; /* Highlight on hover */
+}
+
+/* Firefox scrollbar styling */
+.bulk-history-cards {
+  scrollbar-width: thin; /* Thin scrollbar */
+  scrollbar-color: #cbd5e1 #f1f5f9; /* Thumb and track colors */
+}
+
+.bulk-history-card {
+  background: #ecfdf5; /* Light green shade */
+  padding: 1rem;
+  border-radius: 8px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.bulk-history-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.bulk-history-card p {
+  margin: 0.5rem 0 0 0;
+  color: #1e293b;
+}
+
+.view-details-link {
+  color: #3b82f6;
+  font-weight: 600;
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: color 0.3s ease;
+}
+
+.view-details-link:hover {
+  color: #1e40af;
+  text-decoration: underline;
+}
+
+.goback {
+  background-color: #828a97;
+  border: none;
+  border-radius: 50%;
+  font-size: large;
+  color: #fff;
+  line-height: 1;
+  padding: 8px;
+}
+
+.goback:hover {
+  background-color: #e1e3e7;
+  color: #000;
+  cursor: pointer;
+  transition: all .3s ease;
 }
 
 @media (max-width: 768px) {

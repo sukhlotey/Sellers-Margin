@@ -3,6 +3,8 @@ import { AuthContext } from "../context/AuthContext";
 import { ProfitFeeContext } from "../context/ProfitFeeContext";
 import axios from "axios";
 import BulkDetails from "./BulkDetails";
+import { FiArrowRight } from "react-icons/fi";
+import { FaBoxes } from "react-icons/fa";
 
 const BulkHistory = () => {
   const { token } = useContext(AuthContext);
@@ -33,7 +35,7 @@ const BulkHistory = () => {
       );
       setSelectedBatch({
         ...batch,
-        records: res.data, // ✅ attach fetched records
+        records: res.data,
       });
     } catch (err) {
       console.error("Error fetching batch details", err);
@@ -53,25 +55,32 @@ const BulkHistory = () => {
 
   return (
     <div className="bulk-history">
-      <h3>📦 Bulk Upload History</h3>
+      <h3><FaBoxes/> Bulk History</h3>
 
       {bulkHistory.length === 0 ? (
         <p>No bulk uploads yet.</p>
       ) : (
-        <ul>
+        <div className="bulk-history-cards">
           {bulkHistory.map((batch) => (
-            <li key={batch._id} className="bulk-item">
+            <div key={batch._id} className="bulk-history-card">
               <div>
-                <strong>{new Date(batch.createdAt).toLocaleString()}</strong>
-                <br />
-                {batch.recordsCount} records
+                <strong>{batch.fileName || "Untitled"}</strong>
+                <p>{new Date(batch.createdAt).toLocaleString()}</p>
+                <p>{batch.recordsCount} records</p>
               </div>
-              <button onClick={() => handleViewDetails(batch)}>
-                {loading ? "Loading..." : "View Details"}
-              </button>
-            </li>
+              <a
+                href="#"
+                className="view-details-link"
+                onClick={(e) => {
+                  e.preventDefault();
+                  handleViewDetails(batch);
+                }}
+              >
+                {loading ? "Loading..." : "View Details"} <FiArrowRight />
+              </a>
+            </div>
           ))}
-        </ul>
+        </div>
       )}
     </div>
   );
