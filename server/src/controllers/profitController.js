@@ -177,3 +177,51 @@ export const getProfitHistory = async (req, res) => {
     res.status(500).json({ message: "Error fetching history", error: error.message });
   }
 };
+
+export const deleteBulkBatch = async (req, res) => {
+  try {
+    const { batchId } = req.params;
+
+    if (!batchId) {
+      return res.status(400).json({ message: "Batch ID is required" });
+    }
+
+    const result = await ProfitFee.deleteMany({
+      userId: req.user._id,
+      batchId,
+      isBulk: true,
+    });
+
+    if (result.deletedCount === 0) {
+      return res.status(404).json({ message: "No records found for this batch" });
+    }
+
+    res.json({ message: "Bulk batch deleted successfully", deletedCount: result.deletedCount });
+  } catch (error) {
+    res.status(500).json({ message: "Error deleting bulk batch", error: error.message });
+  }
+};
+
+export const deleteMultipleBulkBatches = async (req, res) => {
+  try {
+    const { batchIds } = req.body;
+
+    if (!batchIds || !Array.isArray(batchIds) || batchIds.length === 0) {
+      return res.status(400).json({ message: "No batch IDs provided" });
+    }
+
+    const result = await ProfitFee.deleteMany({
+      userId: req.user._id,
+      batchId: { $in: batchIds },
+      isBulk: true,
+    });
+
+    if (result.deletedCount === 0) {
+      return res.status(404).json({ message: "No records found for the provided batch IDs" });
+    }
+
+    res.json({ message: "Bulk batches deleted successfully", deletedCount: result.deletedCount });
+  } catch (error) {
+    res.status(500).json({ message: "Error deleting bulk batches", error: error.message });
+  }
+};

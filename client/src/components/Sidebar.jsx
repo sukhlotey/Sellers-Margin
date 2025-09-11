@@ -42,7 +42,7 @@ const Sidebar = ({ isOpen, isMobile, toggleSidebar }) => {
                 </li>
                 <li>
                     <NavLink 
-                        to="/gst" 
+                        to="/gst-settlement" 
                         className={({ isActive }) => isActive ? "active-link" : ""} 
                         onClick={isMobile ? toggleSidebar : null}
                     >

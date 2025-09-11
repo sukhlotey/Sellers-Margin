@@ -2,11 +2,13 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-d
 import { useContext } from "react";
 import { AuthContext, AuthProvider } from "./context/AuthContext";
 import { ProfitFeeProvider } from "./context/ProfitFeeContext";
+import { GstProvider } from "./context/GstContext";  // ✅ import
 
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Dashboard from "./pages/Dashboard";
 import ProfitFeeCalculator from "./pages/ProfitFeeCalculator";
+import GstSettlementPage from "./pages/GstSettlementPage";
 
 const PrivateRoute = ({ children }) => {
   const { user, loading } = useContext(AuthContext);
@@ -19,34 +21,45 @@ function App() {
   return (
     <AuthProvider>
       <ProfitFeeProvider>
-        <Router>
-          <Routes>
-            {/* Public routes */}
-            <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<Register />} />
+        <GstProvider>   {/* ✅ wrap everything inside GstProvider */}
+          <Router>
+            <Routes>
+              {/* Public routes */}
+              <Route path="/login" element={<Login />} />
+              <Route path="/register" element={<Register />} />
 
-            {/* Protected routes */}
-            <Route
-              path="/dashboard"
-              element={
-                <PrivateRoute>
-                  <Dashboard />
-                </PrivateRoute>
-              }
-            />
-            <Route
-              path="/profit-fee"
-              element={
-                <PrivateRoute>
-                  <ProfitFeeCalculator />
-                </PrivateRoute>
-              }
-            />
+              {/* Protected routes */}
+              <Route
+                path="/dashboard"
+                element={
+                  <PrivateRoute>
+                    <Dashboard />
+                  </PrivateRoute>
+                }
+              />
+              <Route
+                path="/profit-fee"
+                element={
+                  <PrivateRoute>
+                    <ProfitFeeCalculator />
+                  </PrivateRoute>
+                }
+              />
 
-            {/* Default redirect */}
-            <Route path="/" element={<Navigate to="/dashboard" />} />
-          </Routes>
-        </Router>
+              <Route
+                path="/gst-settlement"
+                element={
+                  <PrivateRoute>
+                    <GstSettlementPage />
+                  </PrivateRoute>
+                }
+              />
+
+              {/* Default redirect */}
+              <Route path="/" element={<Navigate to="/dashboard" />} />
+            </Routes>
+          </Router>
+        </GstProvider>
       </ProfitFeeProvider>
     </AuthProvider>
   );

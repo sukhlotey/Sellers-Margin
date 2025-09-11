@@ -88,11 +88,11 @@
 }
 
 .result-card.profit-positive {
-  background: #dbeafe; /* Blue shade for positive profit */
+  background: #dbeafe;
 }
 
 .result-card.profit-negative {
-  background: #fee2e2; /* Red shade for negative profit */
+  background: #fee2e2;
 }
 
 .calc-btn {
@@ -177,35 +177,13 @@
 }
 
 .history-card li.profit-positive {
-  background: #dbeafe; /* Blue shade for positive profit */
+  background: #dbeafe;
 }
 
 .history-card li.profit-negative {
-  background: #fee2e2; /* Red shade for negative profit */
-}
-.history-card::-webkit-scrollbar {
-  width: 8px; /* Narrow scrollbar */
+  background: #fee2e2;
 }
 
-.history-card::-webkit-scrollbar-track {
-  background: #f1f5f9; /* Match container background */
-  border-radius: 4px;
-}
-
-.history-card::-webkit-scrollbar-thumb {
-  background: #cbd5e1; /* Scrollbar color */
-  border-radius: 4px;
-}
-
-.history-card::-webkit-scrollbar-thumb:hover {
-  background: #3b82f6; /* Highlight on hover */
-}
-
-/* Firefox scrollbar styling */
-.history-card {
-  scrollbar-width: thin; /* Thin scrollbar */
-  scrollbar-color: #cbd5e1 #f1f5f9; /* Thumb and track colors */
-}
 .download-btn {
   background-color: #10b981;
   border: 0;
@@ -243,46 +221,79 @@
   min-width: 0;
 }
 
+.bulk-history-controls {
+  
+  margin-bottom: 1rem;
+  display: flex;
+  justify-content: space-between;
+}
+
+.toggle-delete-btn {
+  background-color: #e11d48;
+  border: 0;
+  border-radius: 5px;
+  color: #fff;
+  padding: 8px 12px;
+  font-size: medium;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.toggle-delete-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  cursor: pointer;
+}
+
+.toggle-delete-btn:disabled {
+  background-color: #cbd5e1;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
 .bulk-history-cards {
   display: flex;
   flex-direction: column;
   gap: 1rem;
   margin-top: 1rem;
-  max-height: 600px; /* Set a fixed height for the container */
-  overflow-y: auto; /* Enable vertical scrolling */
-  padding-right: 0.5rem; /* Space for scrollbar */
+  max-height: 700px;
+  overflow-y: auto;
+  padding-right: 0.5rem;
   background-color: #f8fafc;
-  padding: 8px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+;
+  padding: 10px;
   border-radius: 8px;
 }
 
-/* Customize scrollbar for Webkit browsers (Chrome, Safari, Edge) */
 .bulk-history-cards::-webkit-scrollbar {
-  width: 8px; /* Narrow scrollbar */
+  width: 8px;
 }
 
 .bulk-history-cards::-webkit-scrollbar-track {
-  background: #f1f5f9; /* Match container background */
+  background: #f1f5f9;
   border-radius: 4px;
 }
 
 .bulk-history-cards::-webkit-scrollbar-thumb {
-  background: #cbd5e1; /* Scrollbar color */
+  background: #cbd5e1;
   border-radius: 4px;
 }
 
 .bulk-history-cards::-webkit-scrollbar-thumb:hover {
-  background: #3b82f6; /* Highlight on hover */
+  background: #3b82f6;
 }
 
-/* Firefox scrollbar styling */
 .bulk-history-cards {
-  scrollbar-width: thin; /* Thin scrollbar */
-  scrollbar-color: #cbd5e1 #f1f5f9; /* Thumb and track colors */
+  scrollbar-width: thin;
+  scrollbar-color: #cbd5e1 #f1f5f9;
 }
 
 .bulk-history-card {
-  background: #ecfdf5; /* Light green shade */
+  background: #ecfdf5;
   padding: 1rem;
   border-radius: 8px;
   box-shadow: 0 2px 6px rgba(0,0,0,0.08);
@@ -297,11 +308,58 @@
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 
+.bulk-history-card-content {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.bulk-history-card-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.batch-checkbox {
+  margin: 0;
+  cursor: pointer;
+}
+
+.delete-batch-btn {
+  background-color: #e11d48;
+  border: 0;
+  border-radius: 5px;
+  color: #fff;
+  padding: 8px;
+  font-size: medium;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.delete-batch-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  cursor: pointer;
+}
+
+.delete-batch-btn:disabled {
+  background-color: #cbd5e1;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
 .bulk-history-card p {
   margin: 0.5rem 0 0 0;
   color: #1e293b;
 }
+.bulk-details-header{
+  display: flex;
+  gap: 5px;
 
+}
 .view-details-link {
   color: #3b82f6;
   font-weight: 600;
@@ -318,11 +376,11 @@
 }
 
 .goback {
-  background-color: #828a97;
+  background-color: transparent;
   border: none;
   border-radius: 50%;
   font-size: large;
-  color: #fff;
+  color: #000;
   line-height: 1;
   padding: 8px;
 }
@@ -332,6 +390,41 @@
   color: #000;
   cursor: pointer;
   transition: all .3s ease;
+}
+
+.column-mapping {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-bottom: 1rem;
+}
+
+.table-scrollable {
+  overflow-x: auto;
+  max-width: 100%;
+  max-height: 700px;
+}
+
+.table-scrollable table {
+  min-width: 1200px; /* Ensure table is wide enough for all columns */
+}
+
+.table-scrollable th,
+.table-scrollable td {
+  min-width: 100px; /* Fixed minimum width for each column */
+  white-space: nowrap; /* Prevent text wrapping */
+  text-align: left;
+  padding: 0.5rem;
+}
+
+.table-scrollable th:first-child,
+.table-scrollable td:first-child {
+  min-width: 200px; /* Wider column for Product Name */
+}
+
+.table-scrollable th:nth-child(9),
+.table-scrollable td:nth-child(9) {
+  min-width: 150px; /* Wider column for Category */
 }
 
 @media (max-width: 768px) {

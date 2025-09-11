@@ -10,6 +10,12 @@ const BulkUploadModal = () => {
   const [file, setFile] = useState(null);
   const [previewData, setPreviewData] = useState([]);
   const [calculatedData, setCalculatedData] = useState([]);
+  const [columnHeaders, setColumnHeaders] = useState([]);
+  const [columnMapping, setColumnMapping] = useState({
+    productName: "",
+    sellingPrice: "",
+    costPrice: "",
+  });
   const [inputs, setInputs] = useState({
     commissionPercent: 15,
     gstPercent: 18,
@@ -26,29 +32,41 @@ const BulkUploadModal = () => {
   const getShippingCost = (slab, customShipping) => {
     if (slab === "custom") return Number(customShipping) || 0;
     switch (slab) {
-      case "0-500": return 40;
-      case "501-1000": return 70;
-      case "1001-5000": return 120;
-      default: return 0;
+      case "0-500":
+        return 40;
+      case "501-1000":
+        return 70;
+      case "1001-5000":
+        return 120;
+      default:
+        return 0;
     }
   };
 
   const getWeight = (slab, customWeight) => {
     if (slab === "custom") return Number(customWeight) || 0;
     switch (slab) {
-      case "0-500": return 500;
-      case "501-1000": return 1000;
-      case "1001-5000": return 5000;
-      default: return 0;
+      case "0-500":
+        return 500;
+      case "501-1000":
+        return 1000;
+      case "1001-5000":
+        return 5000;
+      default:
+        return 0;
     }
   };
 
   const getCommission = (category) => {
     switch (category) {
-      case "Electronics": return 8;
-      case "Books": return 5;
-      case "Fashion": return 15;
-      default: return 15;
+      case "Electronics":
+        return 8;
+      case "Books":
+        return 5;
+      case "Fashion":
+        return 15;
+      default:
+        return 15;
     }
   };
 
@@ -61,10 +79,17 @@ const BulkUploadModal = () => {
     }
   };
 
+  const handleColumnMappingChange = (e) => {
+    const { name, value } = e.target;
+    setColumnMapping({ ...columnMapping, [name]: value });
+  };
+
   const handleFileChange = (e) => {
     setFile(e.target.files[0]);
     setPreviewData([]);
     setCalculatedData([]);
+    setColumnHeaders([]);
+    setColumnMapping({ productName: "", sellingPrice: "", costPrice: "" });
     console.log("Selected file:", e.target.files[0]);
   };
 
@@ -79,10 +104,22 @@ const BulkUploadModal = () => {
         skipEmptyLines: true,
         complete: (results) => {
           console.log("CSV parsed:", results.data);
+          const headers = Object.keys(results.data[0] || {});
+          setColumnHeaders(headers);
+
+          // Suggest initial mappings based on common variations
+          const suggestedMapping = {
+            productName: headers.find(h => h.toLowerCase().includes("product") || h.toLowerCase().includes("name")) || "",
+            sellingPrice: headers.find(h => h.toLowerCase().includes("sell") || h.toLowerCase().includes("price")) || "",
+            costPrice: headers.find(h => h.toLowerCase().includes("cost")) || "",
+          };
+          setColumnMapping(suggestedMapping);
+
+          // Map data using current (or suggested) mappings
           const filteredData = results.data.map(row => ({
-            productName: row.productName || "",
-            sellingPrice: row.sellingPrice || "",
-            costPrice: row.costPrice || "",
+            productName: row[suggestedMapping.productName] || "",
+            sellingPrice: parseFloat(row[suggestedMapping.sellingPrice]) || "",
+            costPrice: parseFloat(row[suggestedMapping.costPrice]) || "",
           }));
           setPreviewData(filteredData);
         },
@@ -94,10 +131,72 @@ const BulkUploadModal = () => {
         const sheetName = workbook.SheetNames[0];
         const sheet = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName]);
         console.log("Excel parsed:", sheet);
+        const headers = Object.keys(sheet[0] || {});
+        setColumnHeaders(headers);
+
+        // Suggest initial mappings based on common variations
+        const suggestedMapping = {
+          productName: headers.find(h => h.toLowerCase().includes("product") || h.toLowerCase().includes("name")) || "",
+          sellingPrice: headers.find(h => h.toLowerCase().includes("sell") || h.toLowerCase().includes("price")) || "",
+          costPrice: headers.find(h => h.toLowerCase().includes("cost")) || "",
+        };
+        setColumnMapping(suggestedMapping);
+
+        // Map data using current (or suggested) mappings
         const filteredData = sheet.map(row => ({
-          productName: row.productName || "",
-          sellingPrice: row.sellingPrice || "",
-          costPrice: row.costPrice || "",
+          productName: row[suggestedMapping.productName] || "",
+          sellingPrice: parseFloat(row[suggestedMapping.sellingPrice]) || "",
+          costPrice: parseFloat(row[suggestedMapping.costPrice]) || "",
+        }));
+        setPreviewData(filteredData);
+      };
+      reader.readAsArrayBuffer(file);
+    }
+  };
+
+  const validateMapping = () => {
+    return (
+      columnMapping.productName &&
+      columnMapping.sellingPrice &&
+      columnMapping.costPrice &&
+      columnHeaders.includes(columnMapping.productName) &&
+      columnHeaders.includes(columnMapping.sellingPrice) &&
+      columnHeaders.includes(columnMapping.costPrice)
+    );
+  };
+
+  const handleApplyMapping = () => {
+    if (!validateMapping()) {
+      alert("Please map all required columns (Product Name, Selling Price, Cost Price).");
+      return;
+    }
+
+    // Re-parse the file with the user-selected mappings
+    const reader = new FileReader();
+
+    if (file.type === "text/csv") {
+      Papa.parse(file, {
+        header: true,
+        skipEmptyLines: true,
+        complete: (results) => {
+          const filteredData = results.data.map(row => ({
+            productName: row[columnMapping.productName] || "",
+            sellingPrice: parseFloat(row[columnMapping.sellingPrice]) || "",
+            costPrice: parseFloat(row[columnMapping.costPrice]) || "",
+          }));
+          setPreviewData(filteredData);
+        },
+      });
+    } else {
+      reader.onload = (evt) => {
+        const data = new Uint8Array(evt.target.result);
+        const workbook = XLSX.read(data, { type: "array" });
+        const sheetName = workbook.SheetNames[0];
+        const sheet = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName]);
+        const filteredData = sheet.map(row => ({
+          productName: row[columnMapping.productName] || "",
+          sellingPrice: parseFloat(row[columnMapping.sellingPrice]) || "",
+          costPrice: parseFloat(row[columnMapping.costPrice]) || "",
         }));
         setPreviewData(filteredData);
       };
@@ -107,6 +206,7 @@ const BulkUploadModal = () => {
 
   const calculateData = () => {
     if (previewData.length === 0) return alert("Preview data first!");
+    if (!validateMapping()) return alert("Please map all required columns and apply mapping.");
 
     const results = previewData.map((row) => {
       const sellingPrice = parseFloat(row.sellingPrice);
@@ -120,7 +220,9 @@ const BulkUploadModal = () => {
 
       if (!row.productName || isNaN(sellingPrice) || isNaN(costPrice) || isNaN(commissionPercent) || isNaN(gstPercent)) {
         return {
-          ...row,
+          productName: row.productName,
+          sellingPrice: isNaN(sellingPrice) ? row.sellingPrice : sellingPrice,
+          costPrice: isNaN(costPrice) ? row.costPrice : costPrice,
           commissionFee: null,
           gstTax: null,
           profit: null,
@@ -142,7 +244,9 @@ const BulkUploadModal = () => {
       const breakEvenPrice = totalCost;
 
       return {
-        ...row,
+        productName: row.productName,
+        sellingPrice,
+        costPrice,
         commissionFee,
         gstTax,
         profit,
@@ -169,7 +273,7 @@ const BulkUploadModal = () => {
       }
       const res = await axios.post(
         "http://localhost:5000/api/profit-fee/bulk-save",
-        { records: validRecords, fileName: file ? file.name : "Untitled" }, // Include fileName
+        { records: validRecords, fileName: file ? file.name : "Untitled" },
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
@@ -182,6 +286,8 @@ const BulkUploadModal = () => {
       setFile(null);
       setPreviewData([]);
       setCalculatedData([]);
+      setColumnHeaders([]);
+      setColumnMapping({ productName: "", sellingPrice: "", costPrice: "" });
     } catch (err) {
       console.error("Bulk save error:", err.response?.data || err.message);
       alert("Error saving bulk records");
@@ -192,9 +298,7 @@ const BulkUploadModal = () => {
     <div className="profit-fee-card">
       <h5>Bulk Upload Products</h5>
       <p>
-        Upload a <b>CSV or Excel (.xlsx)</b> file with required columns:
-        <br />
-        <code>productName, sellingPrice, costPrice</code>
+        Upload a <b>CSV or Excel (.xlsx)</b> file with columns for Product Name, Selling Price, and Cost Price (column names can vary; map them below).
       </p>
 
       <div
@@ -232,6 +336,67 @@ const BulkUploadModal = () => {
         Upload & Preview
       </button>
 
+      {columnHeaders.length > 0 && (
+        <div className="mt-4">
+          <h6>Map Columns</h6>
+          <p>Select the columns from your file that correspond to the required fields.</p>
+          <div className="column-mapping">
+            <div className="form-group">
+              <label>Product Name</label>
+              <select
+                name="productName"
+                value={columnMapping.productName}
+                onChange={handleColumnMappingChange}
+              >
+                <option value="">Select Column</option>
+                {columnHeaders.map((header) => (
+                  <option key={header} value={header}>
+                    {header}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="form-group">
+              <label>Selling Price</label>
+              <select
+                name="sellingPrice"
+                value={columnMapping.sellingPrice}
+                onChange={handleColumnMappingChange}
+              >
+                <option value="">Select Column</option>
+                {columnHeaders.map((header) => (
+                  <option key={header} value={header}>
+                    {header}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="form-group">
+              <label>Cost Price</label>
+              <select
+                name="costPrice"
+                value={columnMapping.costPrice}
+                onChange={handleColumnMappingChange}
+              >
+                <option value="">Select Column</option>
+                {columnHeaders.map((header) => (
+                  <option key={header} value={header}>
+                    {header}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+          <button
+            className="calc-btn"
+            onClick={handleApplyMapping}
+            disabled={!columnMapping.productName || !columnMapping.sellingPrice || !columnMapping.costPrice}
+          >
+            Apply Mapping
+          </button>
+        </div>
+      )}
+
       {previewData.length > 0 && (
         <div className="mt-4">
           <h6>Preview (first 10 rows)</h6>
@@ -239,17 +404,17 @@ const BulkUploadModal = () => {
             <table className="table table-bordered table-sm">
               <thead className="table-light">
                 <tr>
-                  <th>productName</th>
-                  <th>sellingPrice</th>
-                  <th>costPrice</th>
+                  <th>Product Name</th>
+                  <th>Selling Price</th>
+                  <th>Cost Price</th>
                 </tr>
               </thead>
               <tbody>
                 {previewData.slice(0, 10).map((row, i) => (
                   <tr key={i}>
                     <td>{row.productName}</td>
-                    <td>{row.sellingPrice}</td>
-                    <td>{row.costPrice}</td>
+                    <td>{typeof row.sellingPrice === 'number' && !isNaN(row.sellingPrice) ? row.sellingPrice.toFixed(2) : row.sellingPrice}</td>
+                    <td>{typeof row.costPrice === 'number' && !isNaN(row.costPrice) ? row.costPrice.toFixed(2) : row.costPrice}</td>
                   </tr>
                 ))}
               </tbody>
@@ -344,17 +509,17 @@ const BulkUploadModal = () => {
             <table className="table table-bordered table-sm">
               <thead className="table-dark">
                 <tr>
-                  <th>productName</th>
-                  <th>sellingPrice</th>
-                  <th>costPrice</th>
-                  <th>commissionFee</th>
-                  <th>gstTax</th>
-                  <th>shippingCost</th>
-                  <th>adCost</th>
-                  <th>weight</th>
-                  <th>category</th>
-                  <th>profit</th>
-                  <th>breakEvenPrice</th>
+                  <th>Product Name</th>
+                  <th>Selling Price</th>
+                  <th>Cost Price</th>
+                  <th>Commission Fee</th>
+                  <th>GST Tax</th>
+                  <th>Shipping Cost</th>
+                  <th>Ad Cost</th>
+                  <th>Weight</th>
+                  <th>Category</th>
+                  <th>Profit</th>
+                  <th>Break Even Price</th>
                   {calculatedData.some(row => row.error) && <th>Error</th>}
                 </tr>
               </thead>
@@ -363,20 +528,58 @@ const BulkUploadModal = () => {
                   <tr
                     key={i}
                     className={
-                      row.error ? "table-danger" : parseFloat(row.profit) >= 0 ? "table-success" : "table-danger"
+                      row.error
+                        ? "table-danger"
+                        : parseFloat(row.profit) >= 0
+                        ? "table-success"
+                        : "table-danger"
                     }
                   >
                     <td>{row.productName}</td>
-                    <td>{typeof row.sellingPrice === 'number' ? row.sellingPrice.toFixed(2) : row.sellingPrice}</td>
-                    <td>{typeof row.costPrice === 'number' ? row.costPrice.toFixed(2) : row.costPrice}</td>
-                    <td>{typeof row.commissionFee === 'number' && !isNaN(row.commissionFee) ? row.commissionFee.toFixed(2) : "N/A"}</td>
-                    <td>{typeof row.gstTax === 'number' && !isNaN(row.gstTax) ? row.gstTax.toFixed(2) : "N/A"}</td>
-                    <td>{typeof row.shippingCost === 'number' && !isNaN(row.shippingCost) ? row.shippingCost.toFixed(2) : "N/A"}</td>
-                    <td>{typeof row.adCost === 'number' && !isNaN(row.adCost) ? row.adCost.toFixed(2) : "N/A"}</td>
-                    <td>{typeof row.weight === 'number' && !isNaN(row.weight) ? row.weight : "N/A"}</td>
+                    <td>
+                      {typeof row.sellingPrice === "number" && !isNaN(row.sellingPrice)
+                        ? row.sellingPrice.toFixed(2)
+                        : row.sellingPrice}
+                    </td>
+                    <td>
+                      {typeof row.costPrice === "number" && !isNaN(row.costPrice)
+                        ? row.costPrice.toFixed(2)
+                        : row.costPrice}
+                    </td>
+                    <td>
+                      {typeof row.commissionFee === "number" && !isNaN(row.commissionFee)
+                        ? row.commissionFee.toFixed(2)
+                        : "N/A"}
+                    </td>
+                    <td>
+                      {typeof row.gstTax === "number" && !isNaN(row.gstTax)
+                        ? row.gstTax.toFixed(2)
+                        : "N/A"}
+                    </td>
+                    <td>
+                      {typeof row.shippingCost === "number" && !isNaN(row.shippingCost)
+                        ? row.shippingCost.toFixed(2)
+                        : "N/A"}
+                    </td>
+                    <td>
+                      {typeof row.adCost === "number" && !isNaN(row.adCost)
+                        ? row.adCost.toFixed(2)
+                        : "N/A"}
+                    </td>
+                    <td>
+                      {typeof row.weight === "number" && !isNaN(row.weight) ? row.weight : "N/A"}
+                    </td>
                     <td>{row.category || "N/A"}</td>
-                    <td>{typeof row.profit === 'number' && !isNaN(row.profit) ? row.profit.toFixed(2) : "Invalid"}</td>
-                    <td>{typeof row.breakEvenPrice === 'number' && !isNaN(row.breakEvenPrice) ? row.breakEvenPrice.toFixed(2) : "N/A"}</td>
+                    <td>
+                      {typeof row.profit === "number" && !isNaN(row.profit)
+                        ? row.profit.toFixed(2)
+                        : "Invalid"}
+                    </td>
+                    <td>
+                      {typeof row.breakEvenPrice === "number" && !isNaN(row.breakEvenPrice)
+                        ? row.breakEvenPrice.toFixed(2)
+                        : "N/A"}
+                    </td>
                     {row.error && <td>{row.error}</td>}
                   </tr>
                 ))}
