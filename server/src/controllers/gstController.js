@@ -1,9 +1,7 @@
 import Settlement from "../models/Settlement.js";
 import { v4 as uuidv4 } from "uuid";
 import multer from "multer";
-import { parseCSVBuffer, marketplaceParsers } from "../utiles/settlementParser.js";
-import { parseCSVBuffer as parseCSV } from "../utiles/settlementParser.js"; // same util
-import { parse } from "csv-parse/sync";
+import { parseSettlementFile } from "../utiles/settlementParser.js";
 
 /* multer memory storage (do not save file to disk) */
 const storage = multer.memoryStorage();
@@ -17,14 +15,11 @@ export const uploadSettlement = async (req, res) => {
   try {
     if (!req.file) return res.status(400).json({ message: "File required" });
 
-    const { buffer } = req.file;
+    const { buffer, originalname } = req.file;
     const marketplace = (req.body.marketplace || "generic").toLowerCase();
-    // parse rows from CSV buffer (we have parse helper)
-    // NOTE: settlementParser.parseSettlementFile will call parseCSVBuffer internally
-    const rows = parseCSVBuffer(buffer);
-    // choose parser
-    const parser = marketplaceParsers[marketplace] || marketplaceParsers.generic;
-    const canonical = parser(rows);
+    
+    // Parse CSV or Excel file
+    const canonical = parseSettlementFile(buffer, marketplace);
 
     if (!canonical || canonical.length === 0) {
       return res.status(400).json({ message: "No rows parsed from file" });
@@ -32,36 +27,90 @@ export const uploadSettlement = async (req, res) => {
 
     const batchId = uuidv4();
 
-    // enrich and save
+    // Enrich and save
     const toInsert = canonical.map((r) => ({
       userId: req.user._id,
       marketplace,
       settlementId: r.settlementId || null,
       orderId: r.orderId || null,
+      productName: r.productName || null,
       orderDate: r.orderDate || null,
+      quantity: r.quantity || 1,
       grossAmount: r.grossAmount || 0,
+      costPrice: r.costPrice || 0,
       feesBreakdown: r.feesBreakdown || {},
       gstCollected: r.gstCollected || 0,
       gstOnFees: r.gstOnFees || 0,
       netPayout: r.netPayout || 0,
+      grossProfit: r.grossProfit || 0,
+      netProfit: r.netProfit || 0,
+      margin: r.margin || 0,
+      reconciliationStatus: r.reconciliationStatus || "Pending",
+      reconciliationNotes: r.reconciliationNotes || "",
       currency: r.currency || "INR",
       batchId,
       isBulk: true,
+      filename: originalname,
       rawRow: r.rawRow || {},
     }));
 
     const saved = await Settlement.insertMany(toInsert);
 
+    // Compute summary for the response
+    const summary = await getGSTSummaryForBatch(req.user._id, batchId);
+
     return res.json({
       message: "Upload parsed and saved",
       batchId,
       count: saved.length,
+      summary,
+      report: {
+        _id: batchId,
+        createdAt: new Date(),
+        recordsCount: saved.length,
+        marketplace,
+        filename: originalname,
+      },
+      records: toInsert,
     });
   } catch (error) {
     console.error("uploadSettlement error:", error);
     return res.status(500).json({ message: "Upload error", error: error.message });
   }
 };
+
+/**
+ * Helper function to compute summary for a batch
+ */
+async function getGSTSummaryForBatch(userId, batchId) {
+  const agg = await Settlement.aggregate([
+    { $match: { userId, batchId, isBulk: true } },
+    {
+      $group: {
+        _id: null,
+        totalSales: { $sum: { $multiply: ["$grossAmount", "$quantity"] } },
+        outputGST: { $sum: { $multiply: ["$gstCollected", "$quantity"] } },
+        inputGST: { $sum: { $multiply: ["$gstOnFees", "$quantity"] } },
+        totalFees: { $sum: { $sum: ["$feesBreakdown.commission", "$feesBreakdown.shippingFee", "$feesBreakdown.otherFee"] } },
+        totalNetPayout: { $sum: { $multiply: ["$netPayout", "$quantity"] } },
+        totalGrossProfit: { $sum: { $multiply: ["$grossProfit", "$quantity"] } },
+        totalNetProfit: { $sum: { $multiply: ["$netProfit", "$quantity"] } },
+      },
+    },
+  ]);
+
+  const summary = agg[0] || {
+    totalSales: 0,
+    outputGST: 0,
+    inputGST: 0,
+    totalFees: 0,
+    totalNetPayout: 0,
+    totalGrossProfit: 0,
+    totalNetProfit: 0,
+  };
+  summary.netGST = summary.outputGST - summary.inputGST;
+  return summary;
+}
 
 /**
  * GET /api/gst/bulk/history
@@ -77,12 +126,18 @@ export const getBulkHistory = async (req, res) => {
           createdAt: { $first: "$createdAt" },
           recordsCount: { $sum: 1 },
           marketplace: { $first: "$marketplace" },
+          filename: { $first: "$filename" },
         },
       },
       { $sort: { createdAt: -1 } },
     ]);
-    // normalize field name for frontend convenience
-    const payload = bulk.map((b) => ({ _id: b._id, createdAt: b.createdAt, recordsCount: b.recordsCount, marketplace: b.marketplace }));
+    const payload = bulk.map((b) => ({
+      _id: b._id,
+      createdAt: b.createdAt,
+      recordsCount: b.recordsCount,
+      marketplace: b.marketplace,
+      filename: b.filename,
+    }));
     res.json(payload);
   } catch (error) {
     console.error("getBulkHistory error:", error);
@@ -125,11 +180,13 @@ export const getGSTSummary = async (req, res) => {
       {
         $group: {
           _id: null,
-          totalGross: { $sum: "$grossAmount" },
-          totalGSTCollected: { $sum: "$gstCollected" },
-          totalGSTOnFees: { $sum: "$gstOnFees" },
-          totalFees: { $sum: { $sum: [ "$feesBreakdown.commission", "$feesBreakdown.shippingFee", "$feesBreakdown.otherFee" ] } },
-          totalNetPayout: { $sum: "$netPayout" },
+          totalGross: { $sum: { $multiply: ["$grossAmount", "$quantity"] } },
+          totalGSTCollected: { $sum: { $multiply: ["$gstCollected", "$quantity"] } },
+          totalGSTOnFees: { $sum: { $multiply: ["$gstOnFees", "$quantity"] } },
+          totalFees: { $sum: { $sum: ["$feesBreakdown.commission", "$feesBreakdown.shippingFee", "$feesBreakdown.otherFee"] } },
+          totalNetPayout: { $sum: { $multiply: ["$netPayout", "$quantity"] } },
+          totalGrossProfit: { $sum: { $multiply: ["$grossProfit", "$quantity"] } },
+          totalNetProfit: { $sum: { $multiply: ["$netProfit", "$quantity"] } },
         },
       },
     ]);
@@ -140,10 +197,11 @@ export const getGSTSummary = async (req, res) => {
       totalGSTOnFees: 0,
       totalFees: 0,
       totalNetPayout: 0,
+      totalGrossProfit: 0,
+      totalNetProfit: 0,
     };
 
-    // GST liability (simple): output tax - ITC (gstOnFees)
-    const gstLiability = (summary.totalGSTCollected || 0) - (summary.totalGSTOnFees || 0);
+    const gstLiability = summary.totalGSTCollected - summary.totalGSTOnFees;
 
     res.json({ summary, gstLiability });
   } catch (error) {

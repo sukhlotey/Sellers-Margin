@@ -14,7 +14,7 @@ export const uploadSettlement = async (formData, token) => {
 
 // Fetch all reports of logged-in seller
 export const fetchReports = async (token) => {
-  return await API.get("/gst/reports", {
+  return await API.get("/gst/bulk/history", {
     headers: { Authorization: `Bearer ${token}` },
   });
 };

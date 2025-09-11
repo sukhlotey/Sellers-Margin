@@ -1,0 +1,206 @@
+/* gstSettlement.css */
+.gst-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+  font-family: 'Arial', sans-serif;
+}
+
+.gst-card {
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  padding: 20px;
+  margin-bottom: 20px;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  animation: fadeIn 0.5s ease-in-out;
+}
+
+.gst-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+}
+
+.gst-title {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #1a3c87;
+  margin-bottom: 15px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.gst-button {
+  background: #1a3c87;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 20px;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background 0.3s ease, transform 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.gst-button:hover {
+  background: #2a5db0;
+  transform: scale(1.05);
+}
+
+.gst-button:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+}
+
+.gst-file-input-container {
+  position: relative;
+  margin: 20px 0;
+  text-align: center;
+}
+
+.gst-file-input {
+  display: none;
+}
+
+.gst-file-input-label {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #f0f4ff;
+  border: 2px dashed #1a3c87;
+  border-radius: 12px;
+  padding: 20px;
+  font-size: 1.2rem;
+  color: #1a3c87;
+  cursor: pointer;
+  transition: background 0.3s ease, border-color 0.3s ease;
+  width: 100%;
+  max-width: 300px;
+  height: 100px;
+}
+
+.gst-file-input-label:hover {
+  background: #e6ecff;
+  border-color: #2a5db0;
+}
+
+.gst-select {
+  padding: 10px;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+  font-size: 1rem;
+  margin-bottom: 15px;
+  width: 100%;
+  max-width: 300px;
+}
+
+.gst-list {
+  list-style: none;
+  padding: 0;
+}
+
+.gst-list li {
+  padding: 15px;
+  border-bottom: 1px solid #eee;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  transition: background 0.2s ease;
+}
+
+.gst-list li:hover {
+  background: #f9faff;
+}
+
+.gst-list li:last-child {
+  border-bottom: none;
+}
+
+.gst-details {
+  margin-top: 10px;
+  padding: 10px;
+  background: #f9faff;
+  border-radius: 8px;
+}
+
+.gst-summary-list {
+  list-style: none;
+  padding: 0;
+}
+
+.gst-summary-list li {
+  padding: 8px 0;
+  font-size: 1rem;
+  color: #333;
+}
+
+.gst-link {
+  color: #1a3c87;
+  text-decoration: none;
+  font-weight: 500;
+  transition: color 0.2s ease;
+}
+
+.gst-link:hover {
+  color: #2a5db0;
+  text-decoration: underline;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .gst-container {
+    padding: 10px;
+  }
+
+  .gst-card {
+    padding: 15px;
+  }
+
+  .gst-title {
+    font-size: 1.3rem;
+  }
+
+  .gst-button {
+    padding: 8px 15px;
+    font-size: 0.9rem;
+  }
+
+  .gst-file-input-label {
+    font-size: 1rem;
+    padding: 15px;
+    height: 80px;
+  }
+
+  .gst-select {
+    font-size: 0.9rem;
+  }
+
+  .gst-list li {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+
+@media (max-width: 480px) {
+  .gst-title {
+    font-size: 1.1rem;
+  }
+
+  .gst-button {
+    width: 100%;
+    text-align: center;
+  }
+
+  .gst-file-input-label {
+    max-width: 100%;
+  }
+}
