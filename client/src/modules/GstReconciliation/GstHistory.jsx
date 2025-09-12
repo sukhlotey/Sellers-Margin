@@ -1,17 +1,18 @@
-import { useContext, useEffect, useState } from "react";
+import { useContext, useEffect } from "react";
 import { GstContext } from "../../context/GstContext";
 import { AuthContext } from "../../context/AuthContext";
 import { fetchReports } from "../../api/gstApi";
 import * as XLSX from "xlsx";
 import { saveAs } from "file-saver";
 import axios from "axios";
-import { FaHistory, FaDownload, FaEye } from "react-icons/fa";
+import { FaHistory, FaDownload } from "react-icons/fa";
+import { useAlert } from '../../context/AlertContext';
 import "./gstSettlement.css";
 
 const GstHistory = () => {
   const { reports, setReports } = useContext(GstContext);
   const { token } = useContext(AuthContext);
-  const [selectedBatch, setSelectedBatch] = useState(null);
+  const { showAlert } = useAlert();
 
   useEffect(() => {
     const loadReports = async () => {
@@ -24,10 +25,6 @@ const GstHistory = () => {
     };
     loadReports();
   }, [token, setReports]);
-
-  const handleViewDetails = (batchId) => {
-    setSelectedBatch(batchId === selectedBatch ? null : batchId);
-  };
 
   const handleDownloadBatch = async (batchId, filename) => {
     try {
@@ -74,6 +71,24 @@ const GstHistory = () => {
 
       const wb = XLSX.utils.book_new();
       const wsRecords = XLSX.utils.json_to_sheet(records);
+
+      // Apply background colors based on Net Profit
+      const range = XLSX.utils.decode_range(wsRecords["!ref"]);
+      for (let row = range.s.r + 1; row <= range.e.r; row++) { // Skip header row
+        const netProfitCell = `O${row + 1}`; // Net Profit is in column O
+        const netProfitValue = wsRecords[netProfitCell]?.v || 0;
+        const fillStyle = netProfitValue < 0
+          ? { fill: { fgColor: { rgb: "FF0000" } } } // Red for negative
+          : netProfitValue > 0
+            ? { fill: { fgColor: { rgb: "00FF00" } } } // Green for positive
+            : {}; // No fill for zero
+        for (let col = range.s.c; col <= range.e.c; col++) {
+          const cellAddress = XLSX.utils.encode_cell({ r: row, c: col });
+          wsRecords[cellAddress] = wsRecords[cellAddress] || {};
+          wsRecords[cellAddress].s = fillStyle;
+        }
+      }
+
       const wsSummary = XLSX.utils.json_to_sheet(summary);
 
       XLSX.utils.book_append_sheet(wb, wsRecords, "Order Details");
@@ -84,7 +99,7 @@ const GstHistory = () => {
       saveAs(data, filename.replace(/\.[^/.]+$/, "") + "_processed.xlsx");
     } catch (error) {
       console.error(`Error downloading batch ${batchId}:`, error);
-      alert("Failed to download report!");
+      showAlert("error", "Failed to download report!");
     }
   };
 
@@ -99,22 +114,29 @@ const GstHistory = () => {
         ) : (
           <ul className="gst-list">
             {reports.map((rep) => (
-              <li key={rep._id}>
-                <strong>{rep.filename || `Batch ${rep._id}`}</strong> —{" "}
-                {new Date(rep.createdAt).toLocaleString()} ({rep.marketplace}, {rep.recordsCount} records)
-                <button className="gst-button" onClick={() => handleViewDetails(rep._id)}>
-                  <FaEye /> View Details
-                </button>
-                {selectedBatch === rep._id && (
-                  <div className="gst-details">
-                    <button
-                      className="gst-button"
-                      onClick={() => handleDownloadBatch(rep._id, rep.filename)}
-                    >
-                      <FaDownload /> Download Report
-                    </button>
-                  </div>
-                )}
+              <li
+                key={rep._id}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  padding: '15px',
+                  gap: '20px',
+                }}
+              >
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
+                  <strong>{rep.filename || "Untitled"}</strong>
+                  <span>
+                    {new Date(rep.createdAt).toLocaleString()} ({rep.marketplace}, {rep.recordsCount} records)
+                  </span>
+                </div>
+                <a
+                  className="gst-download-link"
+                  style={{ cursor: 'pointer', paddingRight: '10px' }}
+                  onClick={() => handleDownloadBatch(rep._id, rep.filename)}
+                >
+                  <FaDownload /> Download
+                </a>
               </li>
             ))}
           </ul>

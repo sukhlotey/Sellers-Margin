@@ -28,36 +28,41 @@ export const uploadSettlement = async (req, res) => {
     const batchId = uuidv4();
 
     // Enrich and save
-    const toInsert = canonical.map((r) => ({
-      userId: req.user._id,
-      marketplace,
-      settlementId: r.settlementId || null,
-      orderId: r.orderId || null,
-      productName: r.productName || null,
-      orderDate: r.orderDate || null,
-      quantity: r.quantity || 1,
-      grossAmount: r.grossAmount || 0,
-      costPrice: r.costPrice || 0,
-      feesBreakdown: r.feesBreakdown || {},
-      gstCollected: r.gstCollected || 0,
-      gstOnFees: r.gstOnFees || 0,
-      netPayout: r.netPayout || 0,
-      grossProfit: r.grossProfit || 0,
-      netProfit: r.netProfit || 0,
-      margin: r.margin || 0,
-      reconciliationStatus: r.reconciliationStatus || "Pending",
-      reconciliationNotes: r.reconciliationNotes || "",
-      currency: r.currency || "INR",
-      batchId,
-      isBulk: true,
-      filename: originalname,
-      rawRow: r.rawRow || {},
-    }));
+    const toInsert = canonical.map((r) => {
+      console.log("Inserting record:", r); // Debug log
+      return {
+        userId: req.user._id,
+        marketplace,
+        settlementId: r.settlementId || null,
+        orderId: r.orderId || null,
+        productName: r.productName || null,
+        orderDate: r.orderDate || null,
+        quantity: r.quantity || 1,
+        grossAmount: r.grossAmount || 0,
+        costPrice: r.costPrice || 0,
+        feesBreakdown: r.feesBreakdown || { commission: 0, shippingFee: 0, otherFee: 0 },
+        gstCollected: r.gstCollected || 0,
+        gstOnFees: r.gstOnFees || 0,
+        netPayout: r.netPayout || 0,
+        grossProfit: r.grossProfit || 0,
+        netProfit: r.netProfit || 0,
+        margin: r.margin || 0,
+        reconciliationStatus: r.reconciliationStatus || "Pending",
+        reconciliationNotes: r.reconciliationNotes || "",
+        currency: r.currency || "INR",
+        batchId,
+        isBulk: true,
+        filename: originalname,
+        rawRow: r.rawRow || {},
+      };
+    });
 
     const saved = await Settlement.insertMany(toInsert);
+    console.log("Saved records:", saved.length);
 
     // Compute summary for the response
     const summary = await getGSTSummaryForBatch(req.user._id, batchId);
+    console.log("Computed summary:", summary);
 
     return res.json({
       message: "Upload parsed and saved",
@@ -166,14 +171,18 @@ export const getBulkDetails = async (req, res) => {
  */
 export const getGSTSummary = async (req, res) => {
   try {
-    const { from, to } = req.query;
-    const fromDate = from ? new Date(from) : new Date("1970-01-01");
-    const toDate = to ? new Date(to) : new Date();
-
+    const { from, to, batchId } = req.query;
     const match = {
       userId: req.user._id,
-      createdAt: { $gte: fromDate, $lte: toDate },
     };
+
+    if (batchId) {
+      match.batchId = batchId;
+    } else {
+      const fromDate = from ? new Date(from) : new Date("1970-01-01");
+      const toDate = to ? new Date(to) : new Date();
+      match.createdAt = { $gte: fromDate, $lte: toDate };
+    }
 
     const agg = await Settlement.aggregate([
       { $match: match },

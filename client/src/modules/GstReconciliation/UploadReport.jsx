@@ -5,6 +5,8 @@ import { uploadSettlement } from "../../api/gstApi";
 import * as XLSX from "xlsx";
 import { saveAs } from "file-saver";
 import { FaFileUpload, FaDownload, FaSave } from "react-icons/fa";
+import { VscOpenPreview } from "react-icons/vsc";
+import { useAlert } from '../../context/AlertContext';
 import "./gstSettlement.css";
 
 const UploadReport = () => {
@@ -13,14 +15,36 @@ const UploadReport = () => {
   const [file, setFile] = useState(null);
   const [marketplace, setMarketplace] = useState("generic");
   const [uploadResult, setUploadResult] = useState(null);
+  const [showPreview, setShowPreview] = useState(false);
   const fileInputRef = useRef(null);
+  const { showAlert } = useAlert();
+
+  // Supported columns based on columnMap from settlementParser.js
+  const supportedColumns = [
+    { internal: "orderId", names: ["order-id", "Order ID", "order", "amazon-order-id", "Order Item ID", "merchant-order-id"] },
+    { internal: "productName", names: ["sku", "asin", "Product", "item-name", "Product Name", "Seller SKU ID"] },
+    { internal: "settlementId", names: ["settlement-id", "settlement", "Settlement Ref. No.", "settlement-reference"] },
+    { internal: "orderDate", names: ["order-date", "Order Date", "settlement-date", "settlement-start-date", "settlement-end-date", "date", "Dispatch Date", "Delivery Date"] },
+    { internal: "quantity", names: ["quantity", "Quantity", "quantity-purchased", "qty"] },
+    { internal: "grossAmount", names: ["item-price", "Selling Price", "Principal", "amount", "sale-amount", "total-charge", "gross", "sale-value", "Order Item Value (Rs)"] },
+    { internal: "costPrice", names: ["cost-price", "Cost Price", "cost"] },
+    { internal: "commission", names: ["commission", "seller-fee", "selling-fee", "marketplace-fee", "fee", "commission-fee", "marketplace-commission", "fee-commission", "Total Marketplace Fee"] },
+    { internal: "shippingFee", names: ["shipping-charge", "shipping", "shipping-fee", "logistics-fee", "Shipping Fee", "Reverse Shipping Fee", "Return Shipping Fee"] },
+    { internal: "otherFee", names: ["other-fees", "other", "penalties", "closing-fee", "Other Fee", "Cancellation Fee"] },
+    { internal: "gstCollected", names: ["tax", "gst", "gst-collected", "tax-collected", "gst-on-sales", "GST on Sales", "igst", "cgst", "sgst"] },
+    { internal: "gstOnFees", names: ["gst-on-fees", "fee-gst", "gst-on-marketplace-fees", "GST on Fees", "tax-deducted"] },
+    { internal: "netPayout", names: ["settlement-amount", "net-settlement-amount", "total-settlement", "payout", "net-amount", "net-payout", "amount-paid", "Settlement Value (Rs)"] },
+  ];
 
   const handleFileChange = (e) => {
     setFile(e.target.files[0]);
   };
 
   const handleUpload = async () => {
-    if (!file) return alert("Please select a file first!");
+    if (!file) {
+      showAlert("error", "Please select a file first!");
+      return;
+    }
     try {
       const formData = new FormData();
       formData.append("file", file);
@@ -30,22 +54,25 @@ const UploadReport = () => {
       setUploadResult(res.data);
       setSummary(res.data.summary);
 
-      alert("Report uploaded & processed successfully!");
+      showAlert("success", "Report uploaded & processed successfully!");
     } catch (error) {
       console.error("Upload error:", error.response?.data || error.message);
-      alert("Upload failed! Please ensure the file is a valid CSV or Excel.");
+      showAlert("error", "Upload failed! Please ensure the file is a valid CSV or Excel.");
     }
   };
 
   const handleSave = () => {
     if (uploadResult) {
       setReports((prev) => [uploadResult.report, ...prev]);
-      alert("Report saved to history!");
+      showAlert("success", "Report saved to history!");
     }
   };
 
   const handleDownload = () => {
-    if (!uploadResult) return alert("No report to download!");
+    if (!uploadResult) {
+      showAlert("error", "No report to download!");
+      return;
+    }
 
     const records = uploadResult.records.map((record) => ({
       "Order ID": record.orderId || "",
@@ -81,6 +108,24 @@ const UploadReport = () => {
 
     const wb = XLSX.utils.book_new();
     const wsRecords = XLSX.utils.json_to_sheet(records);
+
+    // Apply background colors based on Net Profit
+    const range = XLSX.utils.decode_range(wsRecords["!ref"]);
+    for (let row = range.s.r + 1; row <= range.e.r; row++) { // Skip header row
+      const netProfitCell = `O${row + 1}`; // Net Profit is in column O
+      const netProfitValue = wsRecords[netProfitCell]?.v || 0;
+      const fillStyle = netProfitValue < 0
+        ? { fill: { fgColor: { rgb: "FF0000" } } } // Red for negative
+        : netProfitValue > 0
+          ? { fill: { fgColor: { rgb: "00FF00" } } } // Green for positive
+          : {}; // No fill for zero
+      for (let col = range.s.c; col <= range.e.c; col++) {
+        const cellAddress = XLSX.utils.encode_cell({ r: row, c: col });
+        wsRecords[cellAddress] = wsRecords[cellAddress] || {};
+        wsRecords[cellAddress].s = fillStyle;
+      }
+    }
+
     const wsSummary = XLSX.utils.json_to_sheet(summary);
 
     XLSX.utils.book_append_sheet(wb, wsRecords, "Order Details");
@@ -97,12 +142,38 @@ const UploadReport = () => {
         <h3 className="gst-title">
           <FaFileUpload /> Upload Settlement Report
         </h3>
-        <p>
-          Upload a CSV or Excel file with columns: Order ID, Product Name, Selling Price, Cost Price, Marketplace Fees, GST on Sales, GST on Fees, Net Settlement Amount, Settlement Date, Quantity.{" "}
-          <a className="gst-link" href="/sample-settlement.csv" download>
-            Download sample file
-          </a>.
+        <div className="gst-preview-section">
+          <p>
+          Upload a CSV or Excel and will mapped to file with columns: Order ID, Product Name, Selling Price, Cost Price, Marketplace Fees, GST on Sales, GST on Fees, Net Settlement Amount, Settlement Date, Quantity.{" "}
+          <a
+            className="gst-preview-toggle"
+            style={{ cursor: "pointer" }}
+            onClick={() => setShowPreview(!showPreview)}
+          >
+        {showPreview ? "Hide Supported Columns" : "Show Supported Columns"} <VscOpenPreview/>
+          </a>
         </p>
+          {showPreview && (
+            <div className="gst-preview-table-container">
+              <table className="gst-preview-table">
+                <thead>
+                  <tr>
+                    <th>Marketplace Column Name</th>
+                    <th>Mapped To</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {supportedColumns.map((col, index) => (
+                    <tr key={index}>
+                      <td>{col.names.join(", ")}</td>
+                      <td>{col.internal}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
         <select
           className="gst-select"
           value={marketplace}

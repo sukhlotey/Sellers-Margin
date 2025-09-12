@@ -5,14 +5,19 @@ import * as XLSX from "xlsx";
 import { saveAs } from "file-saver";
 import axios from "axios";
 import { FaDownload } from "react-icons/fa";
+import { useAlert } from '../../context/AlertContext'; // Adjust path as needed
 import "./gstSettlement.css";
 
 const GstDownload = () => {
   const { reports } = useContext(GstContext);
   const { token } = useContext(AuthContext);
+  const { showAlert } = useAlert();
 
   const downloadExcel = async () => {
-    if (reports.length === 0) return alert("No reports available!");
+    if (reports.length === 0) {
+      showAlert("error", "No reports available!");
+      return;
+    }
 
     const detailedReports = [];
     let summaryTotals = {
@@ -52,7 +57,7 @@ const GstDownload = () => {
           "Notes": record.reconciliationNotes || "",
           "Batch ID": report._id,
           "Filename": report.filename || `Batch ${report._id}`,
-          "Marketplace": report.marketplace,
+          "Marketplace": record.marketplace,
         }));
 
         const batchSummary = await axios.get(`http://localhost:5000/api/gst/summary?batchId=${report._id}`, {
@@ -87,6 +92,24 @@ const GstDownload = () => {
 
     const wb = XLSX.utils.book_new();
     const wsRecords = XLSX.utils.json_to_sheet(detailedReports);
+
+    // Apply background colors based on Net Profit
+    const range = XLSX.utils.decode_range(wsRecords["!ref"]);
+    for (let row = range.s.r + 1; row <= range.e.r; row++) { // Skip header row
+      const netProfitCell = `O${row + 1}`; // Net Profit is in column O
+      const netProfitValue = wsRecords[netProfitCell]?.v || 0;
+      const fillStyle = netProfitValue < 0
+        ? { fill: { fgColor: { rgb: "FF0000" } } } // Red for negative
+        : netProfitValue > 0
+          ? { fill: { fgColor: { rgb: "00FF00" } } } // Green for positive
+          : {}; // No fill for zero
+      for (let col = range.s.c; col <= range.e.c; col++) {
+        const cellAddress = XLSX.utils.encode_cell({ r: row, c: col });
+        wsRecords[cellAddress] = wsRecords[cellAddress] || {};
+        wsRecords[cellAddress].s = fillStyle;
+      }
+    }
+
     const wsSummary = XLSX.utils.json_to_sheet(summary);
 
     XLSX.utils.book_append_sheet(wb, wsRecords, "Order Details");

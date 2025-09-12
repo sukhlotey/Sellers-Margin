@@ -2,6 +2,113 @@ import { parse } from "csv-parse/sync";
 import * as XLSX from "xlsx";
 
 /**
+ * Column mapping dictionary for marketplace-specific column names
+ */
+const columnMap = {
+  orderId: [
+    "order-id",
+    "Order ID",
+    "order",
+    "amazon-order-id",
+    "Order Item ID",
+    "merchant-order-id",
+  ],
+  productName: [
+    "sku",
+    "asin",
+    "Product",
+    "item-name",
+    "Product Name",
+    "Seller SKU ID",
+  ],
+  settlementId: [
+    "settlement-id",
+    "settlement",
+    "Settlement Ref. No.",
+    "settlement-reference",
+  ],
+  orderDate: [
+    "order-date",
+    "Order Date",
+    "settlement-date",
+    "settlement-start-date",
+    "settlement-end-date",
+    "date",
+    "Dispatch Date",
+    "Delivery Date",
+  ],
+  quantity: ["quantity", "Quantity", "quantity-purchased", "qty"],
+  grossAmount: [
+    "item-price",
+    "Selling Price",
+    "Principal",
+    "amount",
+    "sale-amount",
+    "total-charge",
+    "gross",
+    "sale-value",
+    "Order Item Value (Rs)",
+  ],
+  costPrice: ["cost-price", "Cost Price", "cost"],
+  commission: [
+    "commission",
+    "seller-fee",
+    "selling-fee",
+    "marketplace-fee",
+    "fee",
+    "commission-fee",
+    "marketplace-commission",
+    "fee-commission",
+    "Total Marketplace Fee",
+  ],
+  shippingFee: [
+    "shipping-charge",
+    "shipping",
+    "shipping-fee",
+    "logistics-fee",
+    "Shipping Fee",
+    "Reverse Shipping Fee",
+    "Return Shipping Fee",
+  ],
+  otherFee: [
+    "other-fees",
+    "other",
+    "penalties",
+    "closing-fee",
+    "Other Fee",
+    "Cancellation Fee",
+  ],
+  gstCollected: [
+    "tax",
+    "gst",
+    "gst-collected",
+    "tax-collected",
+    "gst-on-sales",
+    "GST on Sales",
+    "igst",
+    "cgst",
+    "sgst",
+  ],
+  gstOnFees: [
+    "gst-on-fees",
+    "fee-gst",
+    "gst-on-marketplace-fees",
+    "GST on Fees",
+    "tax-deducted",
+  ],
+  netPayout: [
+    "settlement-amount",
+    "net-settlement-amount",
+    "total-settlement",
+    "payout",
+    "net-amount",
+    "net-payout",
+    "amount-paid",
+    "Settlement Value (Rs)",
+  ],
+};
+
+/**
  * parseCSVBuffer -> returns array of row objects using csv-parse sync
  * @param {Buffer} buffer
  * @returns {Array<Object>}
@@ -28,10 +135,12 @@ export function parseCSVBuffer(buffer, options = {}) {
  */
 export function parseExcelBuffer(buffer) {
   try {
-    const workbook = XLSX.read(buffer, { type: "buffer", raw: false });
+    const workbook = XLSX.read(buffer, { type: "buffer", raw: false, cellDates: true });
     const sheetName = workbook.SheetNames[0];
     const sheet = workbook.Sheets[sheetName];
-    return XLSX.utils.sheet_to_json(sheet, { header: 1, raw: false });
+    const rows = XLSX.utils.sheet_to_json(sheet, { header: true, raw: false, dateNF: "yyyy-mm-dd" });
+    console.log("Parsed Excel rows:", rows);
+    return rows;
   } catch (error) {
     console.error("Error parsing Excel buffer:", error.message);
     throw new Error("Failed to parse Excel file");
@@ -71,7 +180,8 @@ export function parseSettlementFile(buffer, marketplace = "generic") {
  */
 function parseNumberSafe(v) {
   if (v === null || v === undefined || v === "") return 0;
-  const n = Number(String(v).replace(/[^0-9.\-]/g, ""));
+  const cleaned = String(v).replace(/[^0-9.\-]/g, "");
+  const n = Number(cleaned);
   return Number.isNaN(n) ? 0 : n;
 }
 
@@ -84,6 +194,23 @@ function normalizeColumnName(col) {
   return col ? col.toLowerCase().replace(/[^a-z0-9]/g, "") : "";
 }
 
+/**
+ * getColumnKey -> finds the matching column name from columnMap
+ * @param {Object} keys - normalized column keys
+ * @param {string} field - internal field name
+ * @returns {string|null} - matching column name or null
+ */
+function getColumnKey(keys, field) {
+  const possibleNames = columnMap[field] || [];
+  for (const name of possibleNames) {
+    const normalizedName = normalizeColumnName(name);
+    if (keys[normalizedName]) {
+      return keys[normalizedName];
+    }
+  }
+  return null;
+}
+
 export const marketplaceParsers = {
   amazon: (rows) => {
     return rows.map((r) => {
@@ -93,66 +220,25 @@ export const marketplaceParsers = {
       }, {});
       console.log("Amazon parser keys:", keys);
 
-      const orderId =
-        r[keys.orderid] ||
-        r[keys.order] ||
-        r[keys.orderid] ||
-        r[keys.asin] ||
-        r[keys.sku] ||
-        null;
-      const productName =
-        r[keys.productname] ||
-        r[keys.sku] ||
-        r[keys.asin] ||
-        r[keys.product] ||
-        null;
-      const settlementId = r[keys.settlementid] || r[keys.settlement] || null;
-      const orderDate =
-        r[keys.orderdate] || r[keys.shipmentdate] || r[keys.settlementdate] || r[keys.date] || null;
-      const quantity = parseNumberSafe(r[keys.quantity] || r[keys.qty] || 1);
-      const grossAmount = parseNumberSafe(
-        r[keys.itemprice] ||
-          r[keys.saleamount] ||
-          r[keys.totalcharge] ||
-          r[keys.gross] ||
-          r[keys.sellingprice] ||
-          r[keys.salevalue] ||
-          r[keys.amount]
-      );
-      const costPrice = parseNumberSafe(r[keys.costprice] || r[keys.cost] || 0);
-      const commission = parseNumberSafe(
-        r[keys.commission] ||
-          r[keys.sellerfee] ||
-          r[keys.sellingfee] ||
-          r[keys.marketplacefee] ||
-          r[keys.fee]
-      );
-      const shippingFee = parseNumberSafe(
-        r[keys.shippingcharge] ||
-          r[keys.shipping] ||
-          r[keys.shippingfee] ||
-          r[keys.logisticsfee]
-      );
-      const otherFee = parseNumberSafe(
-        r[keys.otherfees] || r[keys.other] || r[keys.penalties] || r[keys.closingfee]
-      );
-      const gstCollected = parseNumberSafe(
-        r[keys.tax] ||
-          r[keys.gst] ||
-          r[keys.gstcollected] ||
-          r[keys.taxcollected] ||
-          r[keys.gstonsales]
-      );
-      const gstOnFees = parseNumberSafe(
-        r[keys.gstonfees] || r[keys.feegst] || r[keys.gstonmarketplacefees]
-      );
-      const netPayout = parseNumberSafe(
-        r[keys.totalsettlement] ||
-          r[keys.payout] ||
-          r[keys.netamount] ||
-          r[keys.netpayout] ||
-          r[keys.netsettlementamount]
-      );
+      // Log unmapped columns for debugging
+      const unmappedKeys = Object.keys(r).filter(key => !Object.values(keys).includes(key));
+      if (unmappedKeys.length > 0) {
+        console.warn("Unmapped columns in Amazon parser:", unmappedKeys);
+      }
+
+      const orderId = getColumnKey(keys, "orderId") ? r[getColumnKey(keys, "orderId")] : null;
+      const productName = getColumnKey(keys, "productName") ? r[getColumnKey(keys, "productName")] : null;
+      const settlementId = getColumnKey(keys, "settlementId") ? r[getColumnKey(keys, "settlementId")] : null;
+      const orderDate = getColumnKey(keys, "orderDate") ? r[getColumnKey(keys, "orderDate")] : null;
+      const quantity = parseNumberSafe(getColumnKey(keys, "quantity") ? r[getColumnKey(keys, "quantity")] : 1);
+      const grossAmount = parseNumberSafe(getColumnKey(keys, "grossAmount") ? r[getColumnKey(keys, "grossAmount")] : 0);
+      const costPrice = parseNumberSafe(getColumnKey(keys, "costPrice") ? r[getColumnKey(keys, "costPrice")] : 0);
+      const commission = parseNumberSafe(getColumnKey(keys, "commission") ? r[getColumnKey(keys, "commission")] : 0);
+      const shippingFee = parseNumberSafe(getColumnKey(keys, "shippingFee") ? r[getColumnKey(keys, "shippingFee")] : 0);
+      const otherFee = parseNumberSafe(getColumnKey(keys, "otherFee") ? r[getColumnKey(keys, "otherFee")] : 0);
+      const gstCollected = parseNumberSafe(getColumnKey(keys, "gstCollected") ? r[getColumnKey(keys, "gstCollected")] : 0);
+      const gstOnFees = parseNumberSafe(getColumnKey(keys, "gstOnFees") ? r[getColumnKey(keys, "gstOnFees")] : 0);
+      const netPayout = parseNumberSafe(getColumnKey(keys, "netPayout") ? r[getColumnKey(keys, "netPayout")] : 0);
 
       // Calculate profitability
       const grossProfit = grossAmount - costPrice;
@@ -202,49 +288,25 @@ export const marketplaceParsers = {
       }, {});
       console.log("Flipkart parser keys:", keys);
 
-      const orderId = r[keys.orderid] || r[keys.order] || r[keys.sku] || null;
-      const productName =
-        r[keys.productname] || r[keys.sku] || r[keys.product] || null;
-      const settlementId = r[keys.settlementreference] || r[keys.settlementid] || null;
-      const orderDate =
-        r[keys.orderdate] || r[keys.settlementdate] || r[keys.date] || null;
-      const quantity = parseNumberSafe(r[keys.quantity] || r[keys.qty] || 1);
-      const grossAmount = parseNumberSafe(
-        r[keys.amount] ||
-          r[keys.salevalue] ||
-          r[keys.gross] ||
-          r[keys.sellingprice] ||
-          r[keys.saleamount]
-      );
-      const costPrice = parseNumberSafe(r[keys.costprice] || r[keys.cost] || 0);
-      const commission = parseNumberSafe(
-        r[keys.marketplacefee] ||
-          r[keys.commission] ||
-          r[keys.sellerfee] ||
-          r[keys.fee]
-      );
-      const shippingFee = parseNumberSafe(
-        r[keys.logisticsfee] || r[keys.shipping] || r[keys.shippingfee]
-      );
-      const otherFee = parseNumberSafe(
-        r[keys.penalties] || r[keys.otherfee] || r[keys.closingfee]
-      );
-      const gstCollected = parseNumberSafe(
-        r[keys.taxcollected] ||
-          r[keys.gstcollected] ||
-          r[keys.gst] ||
-          r[keys.tax] ||
-          r[keys.gstonsales]
-      );
-      const gstOnFees = parseNumberSafe(
-        r[keys.gstonfees] || r[keys.feegst] || r[keys.gstonmarketplacefees]
-      );
-      const netPayout = parseNumberSafe(
-        r[keys.netpayout] ||
-          r[keys.amountpaid] ||
-          r[keys.netamount] ||
-          r[keys.netsettlementamount]
-      );
+      // Log unmapped columns for debugging
+      const unmappedKeys = Object.keys(r).filter(key => !Object.values(keys).includes(key));
+      if (unmappedKeys.length > 0) {
+        console.warn("Unmapped columns in Flipkart parser:", unmappedKeys);
+      }
+
+      const orderId = getColumnKey(keys, "orderId") ? r[getColumnKey(keys, "orderId")] : null;
+      const productName = getColumnKey(keys, "productName") ? r[getColumnKey(keys, "productName")] : null;
+      const settlementId = getColumnKey(keys, "settlementId") ? r[getColumnKey(keys, "settlementId")] : null;
+      const orderDate = getColumnKey(keys, "orderDate") ? r[getColumnKey(keys, "orderDate")] : null;
+      const quantity = parseNumberSafe(getColumnKey(keys, "quantity") ? r[getColumnKey(keys, "quantity")] : 1);
+      const grossAmount = parseNumberSafe(getColumnKey(keys, "grossAmount") ? r[getColumnKey(keys, "grossAmount")] : 0);
+      const costPrice = parseNumberSafe(getColumnKey(keys, "costPrice") ? r[getColumnKey(keys, "costPrice")] : 0);
+      const commission = parseNumberSafe(getColumnKey(keys, "commission") ? r[getColumnKey(keys, "commission")] : 0);
+      const shippingFee = parseNumberSafe(getColumnKey(keys, "shippingFee") ? r[getColumnKey(keys, "shippingFee")] : 0);
+      const otherFee = parseNumberSafe(getColumnKey(keys, "otherFee") ? r[getColumnKey(keys, "otherFee")] : 0);
+      const gstCollected = parseNumberSafe(getColumnKey(keys, "gstCollected") ? r[getColumnKey(keys, "gstCollected")] : 0);
+      const gstOnFees = parseNumberSafe(getColumnKey(keys, "gstOnFees") ? r[getColumnKey(keys, "gstOnFees")] : 0);
+      const netPayout = parseNumberSafe(getColumnKey(keys, "netPayout") ? r[getColumnKey(keys, "netPayout")] : 0);
 
       // Calculate profitability
       const grossProfit = grossAmount - costPrice;
@@ -294,54 +356,25 @@ export const marketplaceParsers = {
       }, {});
       console.log("Generic parser keys:", keys);
 
-      const orderId =
-        r[keys.orderid] || r[keys.order] || r[keys.sku] || r[keys.asin] || null;
-      const productName =
-        r[keys.productname] || r[keys.sku] || r[keys.asin] || r[keys.product] || null;
-      const orderDate =
-        r[keys.orderdate] || r[keys.settlementdate] || r[keys.date] || null;
-      const quantity = parseNumberSafe(r[keys.quantity] || r[keys.qty] || 1);
-      const grossAmount = parseNumberSafe(
-        r[keys.sellingprice] ||
-          r[keys.salevalue] ||
-          r[keys.gross] ||
-          r[keys.amount] ||
-          r[keys.grossamount] ||
-          r[keys.saleamount]
-      );
-      const costPrice = parseNumberSafe(r[keys.costprice] || r[keys.cost] || 0);
-      const commission = parseNumberSafe(
-        r[keys.commission] ||
-          r[keys.fee] ||
-          r[keys.marketplacefee] ||
-          r[keys.sellerfee] ||
-          0
-      );
-      const shippingFee = parseNumberSafe(
-        r[keys.shipping] || r[keys.shippingfee] || r[keys.logisticsfee] || 0
-      );
-      const otherFee = parseNumberSafe(
-        r[keys.otherfee] || r[keys.penalties] || r[keys.closingfee] || 0
-      );
-      const gstCollected = parseNumberSafe(
-        r[keys.gst] ||
-          r[keys.tax] ||
-          r[keys.gstcollected] ||
-          r[keys.taxcollected] ||
-          r[keys.gstonsales] ||
-          0
-      );
-      const gstOnFees = parseNumberSafe(
-        r[keys.gstonfees] || r[keys.feegst] || r[keys.gstonmarketplacefees] || 0
-      );
-      const netPayout = parseNumberSafe(
-        r[keys.net] ||
-          r[keys.netpayout] ||
-          r[keys.amountpaid] ||
-          r[keys.netamount] ||
-          r[keys.netsettlementamount] ||
-          0
-      );
+      // Log unmapped columns for debugging
+      const unmappedKeys = Object.keys(r).filter(key => !Object.values(keys).includes(key));
+      if (unmappedKeys.length > 0) {
+        console.warn("Unmapped columns in Generic parser:", unmappedKeys);
+      }
+
+      const orderId = getColumnKey(keys, "orderId") ? r[getColumnKey(keys, "orderId")] : null;
+      const productName = getColumnKey(keys, "productName") ? r[getColumnKey(keys, "productName")] : null;
+      const settlementId = getColumnKey(keys, "settlementId") ? r[getColumnKey(keys, "settlementId")] : null;
+      const orderDate = getColumnKey(keys, "orderDate") ? r[getColumnKey(keys, "orderDate")] : null;
+      const quantity = parseNumberSafe(getColumnKey(keys, "quantity") ? r[getColumnKey(keys, "quantity")] : 1);
+      const grossAmount = parseNumberSafe(getColumnKey(keys, "grossAmount") ? r[getColumnKey(keys, "grossAmount")] : 0);
+      const costPrice = parseNumberSafe(getColumnKey(keys, "costPrice") ? r[getColumnKey(keys, "costPrice")] : 0);
+      const commission = parseNumberSafe(getColumnKey(keys, "commission") ? r[getColumnKey(keys, "commission")] : 0);
+      const shippingFee = parseNumberSafe(getColumnKey(keys, "shippingFee") ? r[getColumnKey(keys, "shippingFee")] : 0);
+      const otherFee = parseNumberSafe(getColumnKey(keys, "otherFee") ? r[getColumnKey(keys, "otherFee")] : 0);
+      const gstCollected = parseNumberSafe(getColumnKey(keys, "gstCollected") ? r[getColumnKey(keys, "gstCollected")] : 0);
+      const gstOnFees = parseNumberSafe(getColumnKey(keys, "gstOnFees") ? r[getColumnKey(keys, "gstOnFees")] : 0);
+      const netPayout = parseNumberSafe(getColumnKey(keys, "netPayout") ? r[getColumnKey(keys, "netPayout")] : 0);
 
       // Calculate profitability
       const grossProfit = grossAmount - costPrice;
@@ -364,6 +397,7 @@ export const marketplaceParsers = {
       return {
         orderId,
         productName,
+        settlementId,
         orderDate: orderDate ? new Date(orderDate) : null,
         quantity,
         grossAmount,
