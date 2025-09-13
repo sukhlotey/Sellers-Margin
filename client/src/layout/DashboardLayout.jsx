@@ -26,7 +26,6 @@ const DashboardLayout = ({ children }) => {
 
   return (
     <div className={`dashboard-container ${sidebarOpen && !isMobile ? "sidebar-open" : ""}`}>
-      {/* Navbar */}
       <Navbar toggleSidebar={toggleSidebar} />
       <div className="main-layout">
         <Sidebar isOpen={sidebarOpen} isMobile={isMobile} toggleSidebar={toggleSidebar} />

@@ -1,11 +1,14 @@
-import logo from "../assets/logo1.png";
-
+import logo from "../assets/sellersense1.png";
+import { useNavigate } from "react-router-dom";
 const Logo = () => {
+  const Navigate = useNavigate();
   return (
    <>
    <img
+   onClick={() =>Navigate("/dashboard")}
    style={{
-    width: "150px",
+    width: "80px",
+    cursor: "pointer",
    }}
    src={logo} alt="profex"/>
    </>

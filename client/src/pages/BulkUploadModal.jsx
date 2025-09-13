@@ -5,6 +5,8 @@ import { AuthContext } from "../context/AuthContext";
 import { ProfitFeeContext } from "../context/ProfitFeeContext";
 import axios from "axios";
 import { FiUpload } from "react-icons/fi";
+import { Alert, Snackbar } from "@mui/material"; // Import Material-UI components
+import { IoSaveOutline } from "react-icons/io5";
 
 const BulkUploadModal = () => {
   const [file, setFile] = useState(null);
@@ -25,6 +27,7 @@ const BulkUploadModal = () => {
     customWeight: "",
     customShipping: "",
   });
+  const [alert, setAlert] = useState({ open: false, message: "", severity: "error" }); // State for Snackbar
 
   const { token } = useContext(AuthContext);
   const { setBulkHistory } = useContext(ProfitFeeContext);
@@ -93,8 +96,15 @@ const BulkUploadModal = () => {
     console.log("Selected file:", e.target.files[0]);
   };
 
-  const handlePreview = () => {
-    if (!file) return alert("Please select a file first!");
+  const handlePreview = async() => {
+    if (!file) {
+      setAlert({
+        open: true,
+        message: "Please select a file first!",
+        severity: "error",
+      });
+      return;
+    }
 
     const reader = new FileReader();
 
@@ -167,7 +177,11 @@ const BulkUploadModal = () => {
 
   const handleApplyMapping = () => {
     if (!validateMapping()) {
-      alert("Please map all required columns (Product Name, Selling Price, Cost Price).");
+      setAlert({
+        open: true,
+        message: "Please map all required columns (Product Name, Selling Price, Cost Price).",
+        severity: "error",
+      });
       return;
     }
 
@@ -205,8 +219,22 @@ const BulkUploadModal = () => {
   };
 
   const calculateData = () => {
-    if (previewData.length === 0) return alert("Preview data first!");
-    if (!validateMapping()) return alert("Please map all required columns and apply mapping.");
+    if (previewData.length === 0) {
+      setAlert({
+        open: true,
+        message: "Preview data first!",
+        severity: "error",
+      });
+      return;
+    }
+    if (!validateMapping()) {
+      setAlert({
+        open: true,
+        message: "Please map all required columns and apply mapping.",
+        severity: "error",
+      });
+      return;
+    }
 
     const results = previewData.map((row) => {
       const sellingPrice = parseFloat(row.sellingPrice);
@@ -268,7 +296,11 @@ const BulkUploadModal = () => {
     try {
       const validRecords = calculatedData.filter(row => !row.error);
       if (validRecords.length === 0) {
-        alert("No valid records to save!");
+        setAlert({
+          open: true,
+          message: "No valid records to save!",
+          severity: "error",
+        });
         return;
       }
       const res = await axios.post(
@@ -282,7 +314,11 @@ const BulkUploadModal = () => {
       });
       setBulkHistory(historyRes.data);
 
-      alert("Bulk records saved successfully!");
+      setAlert({
+        open: true,
+        message: "Bulk records saved successfully!",
+        severity: "success",
+      });
       setFile(null);
       setPreviewData([]);
       setCalculatedData([]);
@@ -290,8 +326,16 @@ const BulkUploadModal = () => {
       setColumnMapping({ productName: "", sellingPrice: "", costPrice: "" });
     } catch (err) {
       console.error("Bulk save error:", err.response?.data || err.message);
-      alert("Error saving bulk records");
+      setAlert({
+        open: true,
+        message: "Error saving bulk records",
+        severity: "error",
+      });
     }
+  };
+
+  const handleCloseAlert = () => {
+    setAlert({ ...alert, open: false });
   };
 
   return (
@@ -592,10 +636,20 @@ const BulkUploadModal = () => {
             disabled={calculatedData.length === 0}
             style={{ marginTop: "1rem" }}
           >
-            Save to Database 🚀
+            <IoSaveOutline /> Save
           </button>
         </div>
       )}
+      <Snackbar
+        open={alert.open}
+        autoHideDuration={6000}
+        onClose={handleCloseAlert}
+        anchorOrigin={{ vertical: "top", horizontal: "center" }}
+      >
+        <Alert onClose={handleCloseAlert} severity={alert.severity} sx={{ width: "100%" }}>
+          {alert.message}
+        </Alert>
+      </Snackbar>
     </div>
   );
 };

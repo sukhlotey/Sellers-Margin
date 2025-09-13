@@ -48,6 +48,7 @@
 .form-group {
   display: flex;
   flex-direction: column;
+  position: relative;
 }
 
 .form-group label {
@@ -58,11 +59,12 @@
 }
 
 .form-group input {
-  padding: 0.75rem 1rem;
+  padding: 0.75rem 2.5rem 0.75rem 1rem;
   border: 1px solid #e2e8f0;
   border-radius: 6px;
   font-size: 1rem;
   transition: all 0.2s ease;
+  width: 100%;
 }
 
 .form-group input:focus {
@@ -70,7 +72,20 @@
   border-color: #4299e1;
   box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.2);
 }
+.password-toggle {
+  position: absolute;
+  right: 0.75rem;
+  top: 50%;
+  transform: translateY(-10%); /* Adjusted to center vertically with label */
+  cursor: pointer;
+  color: #718096; /* Matches auth-header p color */
+  font-size: 1.25rem;
+  transition: all 0.2s ease;
+}
 
+.password-toggle:hover {
+  color: #4299e1; /* Matches auth-button and link color */
+}
 .auth-button {
   background: #4299e1;
   color: white;
@@ -144,5 +159,15 @@
   
   .auth-header h2 {
     font-size: 1.5rem;
+  }
+
+  .form-group input {
+    padding: 0.6rem 2.25rem 0.6rem 0.9rem; /* Adjusted for smaller screens */
+    font-size: 0.9rem;
+  }
+
+  .password-toggle {
+    font-size: 1.1rem;
+    right: 0.6rem;
   }
 }

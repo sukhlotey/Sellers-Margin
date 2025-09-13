@@ -5,6 +5,7 @@ import { ProfitFeeContext } from "../context/ProfitFeeContext";
 import { CiCalculator2 } from "react-icons/ci";
 import { IoSaveOutline } from "react-icons/io5";
 import { RiDeleteBin7Line } from "react-icons/ri";
+import { Alert, Snackbar } from "@mui/material";
 
 const ProfitFeeForm = () => {
   const { token } = useContext(AuthContext);
@@ -24,33 +25,46 @@ const ProfitFeeForm = () => {
   });
 
   const [result, setResult] = useState(null);
+  const [alert, setAlert] = useState({ open: false, message: "", severity: "error" }); // State for Snackbar
 
   const getShippingCost = (slab, customShipping) => {
     if (slab === "custom") return Number(customShipping) || 0;
     switch (slab) {
-      case "0-500": return 40;
-      case "501-1000": return 70;
-      case "1001-5000": return 120;
-      default: return 0;
+      case "0-500":
+        return 40;
+      case "501-1000":
+        return 70;
+      case "1001-5000":
+        return 120;
+      default:
+        return 0;
     }
   };
 
   const getWeight = (slab, customWeight) => {
     if (slab === "custom") return Number(customWeight) || 0;
     switch (slab) {
-      case "0-500": return 500;
-      case "501-1000": return 1000;
-      case "1001-5000": return 5000;
-      default: return 0;
+      case "0-500":
+        return 500;
+      case "501-1000":
+        return 1000;
+      case "1001-5000":
+        return 5000;
+      default:
+        return 0;
     }
   };
 
   const getCommission = (category) => {
     switch (category) {
-      case "Electronics": return 8;
-      case "Books": return 5;
-      case "Fashion": return 15;
-      default: return 15;
+      case "Electronics":
+        return 8;
+      case "Books":
+        return 5;
+      case "Fashion":
+        return 15;
+      default:
+        return 15;
     }
   };
 
@@ -73,7 +87,11 @@ const ProfitFeeForm = () => {
     const weight = getWeight(inputs.weightSlab, inputs.customWeight);
 
     if (!inputs.productName || isNaN(sp) || isNaN(cp)) {
-      alert("Please enter valid product name, SP & CP.");
+      setAlert({
+        open: true,
+        message: "Please enter valid product name, SP & CP.",
+        severity: "error",
+      });
       return;
     }
 
@@ -100,7 +118,11 @@ const ProfitFeeForm = () => {
 
   const saveRecord = async () => {
     if (!result) {
-      alert("Please calculate first!");
+      setAlert({
+        open: true,
+        message: "Please calculate first!",
+        severity: "error",
+      });
       return;
     }
 
@@ -124,13 +146,22 @@ const ProfitFeeForm = () => {
         { headers: { Authorization: `Bearer ${token}` } }
       );
       addToHistory(res.data);
-      alert("✅ Saved successfully!");
+      setAlert({
+        open: true,
+        message: "✅ Saved successfully!",
+        severity: "success",
+      });
     } catch (error) {
       console.error("Save error:", error.response?.data || error.message);
+      setAlert({
+        open: true,
+        message: "Failed to save record.",
+        severity: "error",
+      });
     }
   };
 
-  const handleClear=() => {
+  const handleClear = () => {
     setInputs({
       productName: "",
       sellingPrice: "",
@@ -144,7 +175,12 @@ const ProfitFeeForm = () => {
       customShipping: "",
     });
     setResult(null);
-  }
+  };
+
+  const handleCloseAlert = () => {
+    setAlert({ ...alert, open: false });
+  };
+
   return (
     <div className="profit-fee-card">
       <div className="form-group">
@@ -217,22 +253,44 @@ const ProfitFeeForm = () => {
         <input type="number" name="gstPercent" value={inputs.gstPercent} onChange={handleChange} />
       </div>
 
-      <button className="calc-btn" onClick={calculate}><CiCalculator2 /> Calculate</button>
-      <button className="calc-btn" onClick={saveRecord}><IoSaveOutline /> Save</button>
-      <button className="clear-btn" onClick={handleClear}><RiDeleteBin7Line/> Clear</button>
+      <button className="calc-btn" onClick={calculate}>
+        <CiCalculator2 /> Calculate
+      </button>
+      <button className="calc-btn" onClick={saveRecord}>
+        <IoSaveOutline /> Save
+      </button>
+      <button className="clear-btn" onClick={handleClear}>
+        <RiDeleteBin7Line /> Clear
+      </button>
       {result && (
-        <div className={`result-card ${result.profit >= 0 ? 'profit-positive' : 'profit-negative'}`}>
-          <p><strong>{result.productName}</strong></p>
+        <div className={`result-card ${result.profit >= 0 ? "profit-positive" : "profit-negative"}`}>
+          <p>
+            <strong>{result.productName}</strong>
+          </p>
           <p>Commission Fee: ₹{result.commissionFee.toFixed(2)}</p>
           <p>GST Tax: ₹{result.gstTax.toFixed(2)}</p>
           <p>Shipping Cost: ₹{result.shippingCost}</p>
           <p>Ad Cost: ₹{result.adCost}</p>
           <p>Weight: {result.weight} g</p>
-          <p><strong>Final Profit: ₹{result.profit.toFixed(2)}</strong></p>
-          <p><strong>Break-even Price: ₹{result.breakEvenPrice.toFixed(2)}</strong></p>
+          <p>
+            <strong>Final Profit: ₹{result.profit.toFixed(2)}</strong>
+          </p>
+          <p>
+            <strong>Break-even Price: ₹{result.breakEvenPrice.toFixed(2)}</strong>
+          </p>
           <small>ℹ️ Break-even = minimum selling price to avoid loss.</small>
         </div>
       )}
+      <Snackbar
+        open={alert.open}
+        autoHideDuration={6000}
+        onClose={handleCloseAlert}
+        anchorOrigin={{ vertical: "top", horizontal: "center" }}
+      >
+        <Alert onClose={handleCloseAlert} severity={alert.severity} sx={{ width: "100%" }}>
+          {alert.message}
+        </Alert>
+      </Snackbar>
     </div>
   );
 };

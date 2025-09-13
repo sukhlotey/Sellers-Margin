@@ -1,13 +1,23 @@
-import { useState, useContext } from "react";
+import { useState, useContext, useEffect } from "react";
 import { AuthContext } from "../context/AuthContext";
 import { useNavigate, Link } from "react-router-dom";
-import "./pagesUI/Auth.css"; // Shared CSS file
+import Logo from "../components/Logo";
+import { IoEyeOutline, IoEyeOffOutline } from "react-icons/io5";
+import "./pagesUI/Auth.css";
 
 const Register = () => {
-  const { register } = useContext(AuthContext);
+  const { user, register } = useContext(AuthContext);
   const navigate = useNavigate();
   const [formData, setFormData] = useState({ name: "", email: "", password: "" });
   const [isLoading, setIsLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false); // State for password visibility
+
+  // Redirect to dashboard if already authenticated
+  useEffect(() => {
+    if (user) {
+      navigate("/dashboard", { replace: true });
+    }
+  }, [user, navigate]);
 
   const handleChange = (e) =>
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -17,19 +27,25 @@ const Register = () => {
     setIsLoading(true);
     try {
       await register(formData);
-      navigate("/dashboard");
+      navigate("/dashboard", { replace: true }); // Use replace to avoid adding to history
     } catch (err) {
-      alert(err.response?.data?.message || "Registration failed");
+      console.error("Registration error:", err); // Log error for debugging
+      alert(err.response?.data?.message || "Registration failed. Please try again.");
     } finally {
       setIsLoading(false);
     }
   };
 
+  const togglePasswordVisibility = () => {
+    setShowPassword(!showPassword);
+  };
   return (
     <div className="auth-container">
       <div className="auth-card">
         <div className="auth-header">
-          <h2>Create Account</h2>
+           <div style={{display:"flex",justifyContent:"center",alignItems:"center"}}>
+                <Logo />
+            </div>
           <p>Sign up to get started with our service</p>
         </div>
         
@@ -59,16 +75,21 @@ const Register = () => {
           </div>
           
           <div className="form-group">
-            <label htmlFor="password">Password</label>
-            <input 
-              type="password" 
-              id="password"
-              name="password" 
-              placeholder="Create a password" 
-              onChange={handleChange}
-              required 
-            />
-          </div>
+                     <label htmlFor="password">Password</label>
+                     <div className="password-input-container">
+                       <input
+                         type={showPassword ? "text" : "password"}
+                         id="password"
+                         name="password"
+                         placeholder="Enter your password"
+                         onChange={handleChange}
+                         required
+                       />
+                       <span className="password-toggle" onClick={togglePasswordVisibility}>
+                         {showPassword ? <IoEyeOffOutline /> : <IoEyeOutline />}
+                       </span>
+                     </div>
+                   </div>
           
           <button type="submit" className="auth-button" disabled={isLoading}>
             {isLoading ? (

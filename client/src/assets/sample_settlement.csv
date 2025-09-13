@@ -1,6 +1,0 @@
-OrderID,ProductName,SellingPrice,CostPrice,CommissionFee,ShippingFee,GST,SettlementAmount
-ORD001,Wireless Mouse,1200,800,120,50,180,850
-ORD002,Bluetooth Speaker,2500,1800,250,70,300,1880
-ORD003,Laptop Stand,1500,1000,150,60,200,1090
-ORD004,USB Keyboard,900,600,90,40,100,670
-ORD005,Webcam HD,2200,1600,220,80,280,1620
