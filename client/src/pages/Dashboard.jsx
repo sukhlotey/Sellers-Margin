@@ -80,7 +80,7 @@ Our modules are designed to make selling simpler, faster, and more profitable:
   };
 
   const handleReviewRating = () => {
-    navigate("/review");
+    navigate("/ai-optimizer");
   };
 
   const handleGstSettlement = () => {
@@ -129,7 +129,7 @@ Our modules are designed to make selling simpler, faster, and more profitable:
             </div>
             <div className="card" onClick={handleReviewRating}>
               <RiMoneyRupeeCircleLine size={43} className="card-icon" />
-              <span>Review & Rating Tracker</span>
+              <span>AI generate Detail</span>
             </div>
             <div className="card" onClick={handleGstSettlement}>
               <GrDocumentConfig size={40} className="card-icon" />

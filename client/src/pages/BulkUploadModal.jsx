@@ -116,7 +116,8 @@ const BulkUploadModal = () => {
           console.log("CSV parsed:", results.data);
           const headers = Object.keys(results.data[0] || {});
           setColumnHeaders(headers);
-
+ 
+          
           // Suggest initial mappings based on common variations
           const suggestedMapping = {
             productName: headers.find(h => h.toLowerCase().includes("product") || h.toLowerCase().includes("name")) || "",

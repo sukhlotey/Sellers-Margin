@@ -4,12 +4,13 @@ import { AuthContext, AuthProvider } from "./context/AuthContext";
 import { ProfitFeeProvider } from "./context/ProfitFeeContext";
 import { GstProvider } from "./context/GstContext";
 import { AlertProvider } from "./context/AlertContext"; // Import AlertProvider
-
+import { AiProvider } from "./context/AiContext"; // Import AiProvider
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Dashboard from "./pages/Dashboard";
 import ProfitFeeCalculator from "./pages/ProfitFeeCalculator";
 import GstSettlementPage from "./pages/GstSettlementPage";
+import AiOptimizerPage from "./pages/AiOptimizerPage";
 
 const PrivateRoute = ({ children }) => {
   const { user, loading } = useContext(AuthContext);
@@ -24,6 +25,8 @@ function App() {
       <ProfitFeeProvider>
         <GstProvider>
           <AlertProvider> {/* Wrap all routes with AlertProvider */}
+                      <AiProvider>
+
             <Router>
               <Routes>
                 {/* Public routes */}
@@ -55,11 +58,17 @@ function App() {
                     </PrivateRoute>
                   }
                 />
+                <Route
+                  path="/ai-optimizer"
+                  element={<PrivateRoute><AiOptimizerPage /></PrivateRoute>}
+                />
+
 
                 {/* Default redirect */}
                 <Route path="/" element={<Navigate to="/dashboard" />} />
               </Routes>
             </Router>
+            </AiProvider>
           </AlertProvider>
         </GstProvider>
       </ProfitFeeProvider>

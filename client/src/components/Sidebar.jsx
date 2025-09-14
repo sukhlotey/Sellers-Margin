@@ -33,7 +33,7 @@ const Sidebar = ({ isOpen, isMobile, toggleSidebar }) => {
                 </li>
                 <li>
                     <NavLink 
-                        to="/reviews" 
+                        to="/ai-optimizer" 
                         className={({ isActive }) => isActive ? "active-link" : ""} 
                         onClick={isMobile ? toggleSidebar : null}
                     >

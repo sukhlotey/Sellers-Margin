@@ -6,7 +6,7 @@ import authRoutes from "./routes/authRoutes.js";
 import profitFeeRoutes from "./routes/profitRoutes.js";
 import gstRoutes from "./routes/gstRoutes.js";
 import profitRoutes from "./routes/profitRoutes.js";
-
+import aiRoutes from "./routes/aiRoutes.js"; 
 
 dotenv.config();
 connectDB();
@@ -20,5 +20,11 @@ app.use("/api/auth", authRoutes);
 app.use("/api/profit-fee", profitFeeRoutes);
 app.use("/api/gst", gstRoutes);
 app.use("/api/profit-fee", profitRoutes);
+app.use("/api/ai", aiRoutes);
+app.get("/", (req, res) => {
+  res.send("Seller Sense AI Module Running 🚀");
+});
+
+
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
