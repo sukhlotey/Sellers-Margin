@@ -1,12 +1,17 @@
-import { useState, useContext } from "react";
+import { useState, useContext, useEffect } from "react";
+import {useNavigate} from "react-router-dom";
 import Papa from "papaparse";
 import * as XLSX from "xlsx";
 import { AuthContext } from "../context/AuthContext";
 import { ProfitFeeContext } from "../context/ProfitFeeContext";
+import { SubscriptionContext } from "../context/SubscriptionContext";
+import { getPlans } from "../api/subscriptionApi";
 import axios from "axios";
 import { FiUpload } from "react-icons/fi";
-import { Alert, Snackbar } from "@mui/material"; // Import Material-UI components
+import { Alert, Snackbar, Modal, Box, Typography, Button, IconButton } from "@mui/material";
 import { IoSaveOutline } from "react-icons/io5";
+import { RiCloseFill } from "react-icons/ri";
+import "../modules/Subscription/Plans.css";
 
 const BulkUploadModal = () => {
   const [file, setFile] = useState(null);
@@ -27,10 +32,40 @@ const BulkUploadModal = () => {
     customWeight: "",
     customShipping: "",
   });
-  const [alert, setAlert] = useState({ open: false, message: "", severity: "error" }); // State for Snackbar
+  const [alert, setAlert] = useState({ open: false, message: "", severity: "error" });
+  const [openModal, setOpenModal] = useState(false);
+  const [plans, setPlans] = useState([]);
 
   const { token } = useContext(AuthContext);
   const { setBulkHistory } = useContext(ProfitFeeContext);
+  const { subscription } = useContext(SubscriptionContext);
+  const navigate = useNavigate();
+
+  // Fetch plans on mount
+  useEffect(() => {
+    getPlans()
+      .then((res) => {
+        const enrichedPlans = res.data
+          .filter((plan) => plan.id !== "free")
+          .map((plan) => ({
+            ...plan,
+            features:
+              plan.id === "basic_monthly"
+                ? ["Unlimited calculations and savings", "Unlimited bulk calculations", "Ad free"]
+                : plan.id === "all_monthly"
+                ? ["Access all modules unlimited", "Ad free"]
+                : plan.id === "annual"
+                ? ["Discount 60%", "Access all modules unlimited", "Ad free"]
+                : [],
+          }));
+        console.log("Fetched plans:", enrichedPlans);
+        setPlans(enrichedPlans);
+      })
+      .catch((err) => {
+        console.error("Error fetching plans:", err);
+        setAlert({ open: true, message: "Failed to load plans.", severity: "error" });
+      });
+  }, []);
 
   const getShippingCost = (slab, customShipping) => {
     if (slab === "custom") return Number(customShipping) || 0;
@@ -96,7 +131,13 @@ const BulkUploadModal = () => {
     console.log("Selected file:", e.target.files[0]);
   };
 
-  const handlePreview = async() => {
+  const handlePreview = async () => {
+    if (!subscription?.isSubscribed) {
+      console.log("Opening modal: Free user attempting bulk upload");
+      setOpenModal(true);
+      return;
+    }
+
     if (!file) {
       setAlert({
         open: true,
@@ -116,7 +157,6 @@ const BulkUploadModal = () => {
           console.log("CSV parsed:", results.data);
           const headers = Object.keys(results.data[0] || {});
           setColumnHeaders(headers);
- 
           
           // Suggest initial mappings based on common variations
           const suggestedMapping = {
@@ -177,6 +217,12 @@ const BulkUploadModal = () => {
   };
 
   const handleApplyMapping = () => {
+    if (!subscription?.isSubscribed) {
+      console.log("Opening modal: Free user attempting to apply mapping");
+      setOpenModal(true);
+      return;
+    }
+
     if (!validateMapping()) {
       setAlert({
         open: true,
@@ -220,6 +266,12 @@ const BulkUploadModal = () => {
   };
 
   const calculateData = () => {
+    if (!subscription?.isSubscribed) {
+      console.log("Opening modal: Free user attempting to calculate data");
+      setOpenModal(true);
+      return;
+    }
+
     if (previewData.length === 0) {
       setAlert({
         open: true,
@@ -294,6 +346,12 @@ const BulkUploadModal = () => {
   };
 
   const handleSave = async () => {
+    if (!subscription?.isSubscribed) {
+      console.log("Opening modal: Free user attempting to save data");
+      setOpenModal(true);
+      return;
+    }
+
     try {
       const validRecords = calculatedData.filter(row => !row.error);
       if (validRecords.length === 0) {
@@ -338,6 +396,30 @@ const BulkUploadModal = () => {
   const handleCloseAlert = () => {
     setAlert({ ...alert, open: false });
   };
+
+  const handleCloseModal = () => {
+    console.log("Closing modal");
+    setOpenModal(false);
+  };
+
+  const handleBuy = async (plan) => {
+  if (!token) {
+    setAlert({ open: true, message: "Please login first!", severity: "error" });
+    return;
+  }
+  try {
+    const res = await axios.post(
+      "http://localhost:5000/api/subscription/create-order",
+      { plan },
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+    console.log("Create order response:", res.data);
+    navigate("/payment", { state: { paymentData: { order: res.data.order, plan } } });
+  } catch (err) {
+    console.error("Error creating payment:", err.response?.data || err.message);
+    setAlert({ open: true, message: err.response?.data?.message || "Error creating payment", severity: "error" });
+  }
+};
 
   return (
     <div className="profit-fee-card">
@@ -641,6 +723,7 @@ const BulkUploadModal = () => {
           </button>
         </div>
       )}
+
       <Snackbar
         open={alert.open}
         autoHideDuration={6000}
@@ -651,6 +734,108 @@ const BulkUploadModal = () => {
           {alert.message}
         </Alert>
       </Snackbar>
+
+      <Modal
+        open={openModal}
+        onClose={handleCloseModal}
+        aria-labelledby="subscription-modal-title"
+        aria-describedby="subscription-modal-description"
+      >
+        <Box
+          sx={{
+            // position: "absolute",
+            top: "50%",
+            left: "50%",
+            transform: "translate(-50%, -50%)",
+            width: { xs: "90%", sm: 600, md: 800 },
+            bgcolor: "background.paper",
+            boxShadow: 24,
+            p: 4,
+            borderRadius: 2,
+            maxHeight: "90vh",
+            overflowY: "auto",
+            position: "relative",
+          }}
+        >
+          <style>
+            {`
+              .modal-plans-flex {
+                display: flex;
+                flex-wrap: wrap;
+                justify-content: space-between;
+                gap: 1rem;
+              }
+              .modal-plans-flex .plan-card {
+                min-height: 300px;
+                flex-grow: 1;
+              }
+              @media (min-width: 768px) {
+                .modal-plans-flex .plan-card {
+                  flex: 1 1 calc(33.33% - 1.5rem);
+                  max-width: calc(33.33% - 1.5rem);
+                }
+              }
+              @media (min-width: 600px) and (max-width: 767px) {
+                .modal-plans-flex .plan-card {
+                  flex: 1 1 calc(50% - 1.5rem);
+                  max-width: calc(50% - 1.5rem);
+                }
+              }
+              @media (max-width: 599px) {
+                .modal-plans-flex .plan-card {
+                  flex: 1 1 100%;
+                  max-width: 100%;
+                }
+              }
+            `}
+          </style>
+          <IconButton
+            onClick={handleCloseModal}
+            sx={{
+              position: "absolute",
+              top: 8,
+              right: 8,
+              color: "error.main",
+            }}
+          >
+            <RiCloseFill />
+          </IconButton>
+          <Typography id="subscription-modal-title" variant="h6" component="h2" gutterBottom>
+            Subscription Required
+          </Typography>
+          <Typography id="subscription-modal-description" sx={{ mb: 3 }}>
+            Bulk upload is available only for paid plans. Please upgrade to continue!
+          </Typography>
+          <div className="modal-plans-flex">
+            {plans.length > 0 ? (
+              plans.map((plan) => (
+                <div key={plan.id} className="plan-card">
+                  <h3 className="plan-name">{plan.name}</h3>
+                  <p className="plan-price">₹{plan.price}</p>
+                  <p className="plan-duration">{plan.duration}</p>
+                  <div className="plan-features">
+                    <ul>
+                      {plan.features.map((feature, index) => (
+                        <li key={index}>{feature}</li>
+                      ))}
+                    </ul>
+                  </div>
+                  <Button
+                    variant="contained"
+                    color="primary"
+                    onClick={() => handleBuy(plan.id)}
+                    sx={{ mt: 2 }}
+                  >
+                    Buy Now
+                  </Button>
+                </div>
+              ))
+            ) : (
+              <Typography>No plans available. Please try again later.</Typography>
+            )}
+          </div>
+        </Box>
+      </Modal>
     </div>
   );
 };

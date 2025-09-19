@@ -1,0 +1,189 @@
+.plans-container {
+  /* padding: 2rem; */
+  max-width: 1200px;
+  margin: 0 auto;
+  text-align: center;
+}
+
+.plans-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #1a202c;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.current-plan {
+  font-size: 1.2rem;
+  color: #4a5568;
+  /* margin-bottom: 2rem; */
+}
+
+.current-plan strong {
+  color: #2b6cb0;
+}
+
+.plans-flex {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-start; /* Align to start (left) */
+  gap: 1.5rem; /* Reduced gap for tighter spacing */
+}
+
+.plan-card {
+  background: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  padding: 2rem;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  position: relative;
+  overflow: hidden;
+  min-height: 350px;
+  flex: 1 1 calc(25% - 1.5rem); /* Four cards per row, accounting for gap */
+  max-width: calc(25% - 1.5rem); /* Ensure equal width */
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.plan-card:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+}
+
+.plan-card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 4px;
+  background: linear-gradient(90deg, #2b6cb0, #4299e1);
+  transition: height 0.3s ease;
+}
+
+.plan-card:hover::before {
+  height: 8px;
+}
+
+.plan-name {
+  font-size: 1.8rem;
+  font-weight: 600;
+  color: #2d3748;
+  margin-bottom: 1rem;
+}
+
+.plan-price {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #2b6cb0;
+  margin: 0.5rem 0;
+}
+
+.plan-duration {
+  font-size: 1.1rem;
+  color: #718096;
+  margin-bottom: 1rem;
+}
+
+.plan-features {
+  font-size: 1rem;
+  color: #4a5568;
+  text-align: left;
+  margin-bottom: 1.5rem;
+  flex-grow: 1;
+}
+
+.plan-features ul {
+  list-style: none;
+  padding: 0;
+}
+
+.plan-features li {
+  margin-bottom: 0.5rem;
+  position: relative;
+  padding-left: 1.5rem;
+}
+
+.plan-features li::before {
+  content: "✔";
+  position: absolute;
+  left: 0;
+  color: #2b6cb0;
+  font-weight: bold;
+}
+
+.plan-button {
+  background: linear-gradient(90deg, #2b6cb0, #4299e1);
+  color: #ffffff;
+  border: none;
+  border-radius: 8px;
+  padding: 0.8rem 1.5rem;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.3s ease, transform 0.2s ease;
+}
+
+.plan-button:hover {
+  background: linear-gradient(90deg, #2c5282, #2b6cb0);
+  transform: scale(1.05);
+}
+
+.plan-button:active {
+  transform: scale(0.95);
+}
+
+/* Responsive design */
+@media (max-width: 1024px) {
+  .plan-card {
+    flex: 1 1 calc(33.33% - 1.5rem); /* Three cards per row */
+    max-width: calc(33.33% - 1.5rem);
+  }
+}
+
+@media (max-width: 768px) {
+  .plans-container {
+    padding: 1rem;
+  }
+
+  .plans-title {
+    font-size: 2rem;
+  }
+
+  .plan-card {
+    flex: 1 1 calc(50% - 1.5rem); /* Two cards per row */
+    max-width: calc(50% - 1.5rem);
+    min-height: 300px;
+    padding: 1.5rem;
+  }
+
+  .plan-name {
+    font-size: 1.5rem;
+  }
+
+  .plan-price {
+    font-size: 1.8rem;
+  }
+
+  .plan-duration {
+    font-size: 1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .plans-title {
+    font-size: 1.8rem;
+  }
+
+  .plan-card {
+    flex: 1 1 100%; /* One card per row */
+    max-width: 100%;
+    padding: 1rem;
+  }
+
+  .plan-button {
+    padding: 0.6rem 1rem;
+    font-size: 0.9rem;
+  }
+}

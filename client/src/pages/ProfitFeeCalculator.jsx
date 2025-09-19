@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useContext } from "react";
+import { SubscriptionContext } from "../context/SubscriptionContext";
 import ProfitFeeForm from "./ProfitFeeForm";
 import ProfitFeeHistory from "./ProfitFeeHistory";
 import DashboardLayout from "../layout/DashboardLayout";
@@ -6,30 +7,37 @@ import BulkUploadModal from "./BulkUploadModal";
 import BulkHistory from "./BulkHistory";
 import "./pagesUI/ProfitFee.css";
 import { MdOutlineKeyboardBackspace } from "react-icons/md";
-import { MdPlaylistAddCheck,MdPlaylistRemove } from "react-icons/md";
+import { MdPlaylistAddCheck, MdPlaylistRemove } from "react-icons/md";
 
 const ProfitFeeCalculator = () => {
+  const { subscription } = useContext(SubscriptionContext);
   const [view, setView] = useState(null); // null, 'single', or 'bulk'
   const [showHistory, setShowHistory] = useState(true);
 
   const handleCardClick = (selectedView) => {
-    setView(selectedView);
-    setShowHistory(true); // Reset history toggle when switching views
+    if (selectedView === "bulk" && !subscription?.isSubscribed) {
+      // Free users are blocked in BulkUploadModal, so allow navigation but modal will handle restriction
+      setView(selectedView);
+      setShowHistory(true);
+    } else {
+      setView(selectedView);
+      setShowHistory(true);
+    }
   };
 
   return (
     <DashboardLayout>
       <div className="dashboard-content">
-      <div className="profit-fee-monitor">
-        {view !== null && (
-          <button
-          className="card-btn"
-          onClick={() => setView(null)}
-          >
-           <MdOutlineKeyboardBackspace />
-          </button>
-        )}
-        <h2> Profit & Fee Monitor</h2>
+        <div className="profit-fee-monitor">
+          {view !== null && (
+            <button
+              className="card-btn"
+              onClick={() => setView(null)}
+            >
+              <MdOutlineKeyboardBackspace />
+            </button>
+          )}
+          <h2> Profit & Fee Monitor</h2>
         </div>
         <p>Quickly calculate your profit after Amazon/Flipkart fees & GST, Shipping etc.</p>
 

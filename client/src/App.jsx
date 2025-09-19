@@ -4,13 +4,14 @@ import { AuthContext, AuthProvider } from "./context/AuthContext";
 import { ProfitFeeProvider } from "./context/ProfitFeeContext";
 import { GstProvider } from "./context/GstContext";
 import { AlertProvider } from "./context/AlertContext"; // Import AlertProvider
-import { AiProvider } from "./context/AiContext"; // Import AiProvider
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Dashboard from "./pages/Dashboard";
 import ProfitFeeCalculator from "./pages/ProfitFeeCalculator";
 import GstSettlementPage from "./pages/GstSettlementPage";
-import AiOptimizerPage from "./pages/AiOptimizerPage";
+import Plans from "./modules/Subscription/Plans";
+import PaymentPage from "./modules/Subscription/PaymentPage";
+import { SubscriptionProvider } from "./context/SubscriptionContext";
 
 const PrivateRoute = ({ children }) => {
   const { user, loading } = useContext(AuthContext);
@@ -24,9 +25,8 @@ function App() {
     <AuthProvider>
       <ProfitFeeProvider>
         <GstProvider>
+          <SubscriptionProvider>
           <AlertProvider> {/* Wrap all routes with AlertProvider */}
-                      <AiProvider>
-
             <Router>
               <Routes>
                 {/* Public routes */}
@@ -34,6 +34,22 @@ function App() {
                 <Route path="/register" element={<Register />} />
 
                 {/* Protected routes */}
+                <Route
+                    path="/subscription"
+                    element={
+                      <PrivateRoute>
+                        <Plans />
+                      </PrivateRoute>
+                    }
+                  />
+                  <Route
+                    path="/payment"
+                    element={
+                      <PrivateRoute>
+                        <PaymentPage />
+                      </PrivateRoute>
+                    }
+                  />
                 <Route
                   path="/dashboard"
                   element={
@@ -58,18 +74,14 @@ function App() {
                     </PrivateRoute>
                   }
                 />
-                <Route
-                  path="/ai-optimizer"
-                  element={<PrivateRoute><AiOptimizerPage /></PrivateRoute>}
-                />
 
 
                 {/* Default redirect */}
                 <Route path="/" element={<Navigate to="/dashboard" />} />
               </Routes>
             </Router>
-            </AiProvider>
           </AlertProvider>
+          </SubscriptionProvider>
         </GstProvider>
       </ProfitFeeProvider>
     </AuthProvider>

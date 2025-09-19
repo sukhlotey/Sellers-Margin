@@ -3,13 +3,14 @@ import { calculateProfit,calculateAndSaveProfit,getProfitHistory,bulkSaveProfit,
   getBulkDetails,deleteBulkBatch,
   deleteMultipleBulkBatches } from "../controllers/profitController.js";
 import { protect } from "../middleware/authMiddleware.js";
+import { enforceFreeLimit } from "../middleware/subscriptionMiddleware.js";
 
 const router = express.Router();
 
 // POST → calculate profit
-router.post("/calculate",protect, calculateProfit);
+router.post("/calculate",protect,enforceFreeLimit, calculateProfit);
 router.get("/history",protect, getProfitHistory);
-router.post("/save", protect, calculateAndSaveProfit);
+router.post("/save", protect,enforceFreeLimit, calculateAndSaveProfit);
 router.post("/bulk-save", protect, bulkSaveProfit);
 router.get("/bulk/history", protect, getBulkHistory);
 router.get("/bulk/:batchId", protect, getBulkDetails);

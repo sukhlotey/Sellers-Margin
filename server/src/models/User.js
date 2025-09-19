@@ -15,6 +15,14 @@ const userSchema = new mongoose.Schema(
       type: String,
       required: [true, "Please enter a password"],
     },
+
+    isSubscribed: { type: Boolean, default: false },
+    plan: { type: String, enum: ["free","basic_monthly","all_monthly","annual"], default: "free" },
+    planStart: { type: Date },
+    planEnd: { type: Date },
+
+    // Free usage tracking (5 free calculations)
+    calcCount: { type: Number, default: 0 },
   },
   { timestamps: true }
 );

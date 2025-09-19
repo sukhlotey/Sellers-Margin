@@ -1,12 +1,12 @@
 import { useContext, useEffect, useState } from "react";
 import { AuthContext } from "../context/AuthContext";
 import DashboardLayout from "../layout/DashboardLayout";
-import { RiMoneyRupeeCircleLine } from "react-icons/ri";
 import { IoHomeOutline } from "react-icons/io5";
 import { GrDocumentConfig } from "react-icons/gr";
 import { IoClose } from "react-icons/io5";
 import { useNavigate } from "react-router-dom";
 import ReactMarkdown from "react-markdown";
+import SubscriptionStatus from "../modules/Subscription/SubscriptionStatus";
 
 const Dashboard = () => {
   const { user } = useContext(AuthContext);
@@ -79,9 +79,7 @@ Our modules are designed to make selling simpler, faster, and more profitable:
     navigate("/profit-fee");
   };
 
-  const handleReviewRating = () => {
-    navigate("/ai-optimizer");
-  };
+
 
   const handleGstSettlement = () => {
     navigate("/gst-settlement");
@@ -119,7 +117,10 @@ Our modules are designed to make selling simpler, faster, and more profitable:
             </div>
           </div>
         )}
-
+        <section className="subscription-overview">
+          <h3>Your Subscription</h3>
+          <SubscriptionStatus />
+        </section>
         <section className="modules-preview">
           <h3 className="section-title">Quick Access</h3>
           <div className="cards">
@@ -127,16 +128,14 @@ Our modules are designed to make selling simpler, faster, and more profitable:
               <IoHomeOutline size={40} className="card-icon" />
               <span>Profit & Fee Calculator</span>
             </div>
-            <div className="card" onClick={handleReviewRating}>
-              <RiMoneyRupeeCircleLine size={43} className="card-icon" />
-              <span>AI generate Detail</span>
-            </div>
             <div className="card" onClick={handleGstSettlement}>
               <GrDocumentConfig size={40} className="card-icon" />
               <span>GST & Settlement</span>
             </div>
+
           </div>
         </section>
+
       </div>
     </DashboardLayout>
   );
