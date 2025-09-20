@@ -1,23 +1,21 @@
-import { useState, useContext, useEffect } from "react";
+import { useState, useContext } from "react";
 import { AuthContext } from "../context/AuthContext";
 import { useNavigate, Link } from "react-router-dom";
 import Logo from "../components/Logo";
 import { IoEyeOutline, IoEyeOffOutline } from "react-icons/io5";
+import { useAlert } from "../context/AlertContext"; // Added import
 import "./pagesUI/Auth.css";
+import { Button, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions, Typography } from "@mui/material";
 
 const Register = () => {
-  const { user, register } = useContext(AuthContext);
+  const { register } = useContext(AuthContext);
   const navigate = useNavigate();
+    const { showAlert } = useAlert(); // Added useAlert
   const [formData, setFormData] = useState({ name: "", email: "", password: "" });
   const [isLoading, setIsLoading] = useState(false);
-  const [showPassword, setShowPassword] = useState(false); // State for password visibility
-
-  // Redirect to dashboard if already authenticated
-  useEffect(() => {
-    if (user) {
-      navigate("/dashboard", { replace: true });
-    }
-  }, [user, navigate]);
+  const [showPassword, setShowPassword] = useState(false);
+  const [openRecoveryModal, setOpenRecoveryModal] = useState(false);
+  const [recoveryCode, setRecoveryCode] = useState("");
 
   const handleChange = (e) =>
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -26,12 +24,14 @@ const Register = () => {
     e.preventDefault();
     setIsLoading(true);
     try {
-      await register(formData);
-      navigate("/dashboard", { replace: true }); // Use replace to avoid adding to history
+      const recoveryCode = await register(formData);
+      showAlert("success", "User Registered!");
+      setRecoveryCode(recoveryCode);
+      setOpenRecoveryModal(true);
+
     } catch (err) {
-      console.error("Registration error:", err); // Log error for debugging
-      alert(err.response?.data?.message || "Registration failed. Please try again.");
-    } finally {
+      console.error("Registration error:", err);
+      showAlert(err.response?.data?.message || "Registration failed. Please try again.");
       setIsLoading(false);
     }
   };
@@ -39,13 +39,25 @@ const Register = () => {
   const togglePasswordVisibility = () => {
     setShowPassword(!showPassword);
   };
+
+  const handleCopyCode = () => {
+    navigator.clipboard.writeText(recoveryCode);
+    showAlert("success", "Recovery code copied to clipboard!");
+  };
+
+  const handleModalClose = () => {
+    setOpenRecoveryModal(false);
+    setIsLoading(false);
+    navigate("/dashboard", { replace: true });
+  };
+
   return (
     <div className="auth-container">
       <div className="auth-card">
         <div className="auth-header">
-           <div style={{display:"flex",justifyContent:"center",alignItems:"center"}}>
-                <Logo />
-            </div>
+          <div style={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
+            <Logo />
+          </div>
           <p>Sign up to get started with our service</p>
         </div>
         
@@ -75,21 +87,21 @@ const Register = () => {
           </div>
           
           <div className="form-group">
-                     <label htmlFor="password">Password</label>
-                     <div className="password-input-container">
-                       <input
-                         type={showPassword ? "text" : "password"}
-                         id="password"
-                         name="password"
-                         placeholder="Enter your password"
-                         onChange={handleChange}
-                         required
-                       />
-                       <span className="password-toggle" onClick={togglePasswordVisibility}>
-                         {showPassword ? <IoEyeOffOutline /> : <IoEyeOutline />}
-                       </span>
-                     </div>
-                   </div>
+            <label htmlFor="password">Password</label>
+            <div className="password-input-container">
+              <input
+                type={showPassword ? "text" : "password"}
+                id="password"
+                name="password"
+                placeholder="Enter your password"
+                onChange={handleChange}
+                required
+              />
+              <span className="password-toggle" onClick={togglePasswordVisibility}>
+                {showPassword ? <IoEyeOffOutline /> : <IoEyeOutline />}
+              </span>
+            </div>
+          </div>
           
           <button type="submit" className="auth-button" disabled={isLoading}>
             {isLoading ? (
@@ -106,6 +118,25 @@ const Register = () => {
           </p>
         </div>
       </div>
+
+      {/* Recovery Code Modal */}
+      <Dialog open={openRecoveryModal} onClose={handleModalClose}>
+        <DialogTitle>Save Your Recovery Code</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            Save this code in a safe place. It can reset your password once if you lose access to your account.
+          </DialogContentText>
+          <Typography variant="h6" align="center" sx={{ my: 2 }}>
+            {recoveryCode}
+          </Typography>
+          <Button variant="contained" onClick={handleCopyCode} fullWidth>
+            Copy Code
+          </Button>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleModalClose}>Confirm</Button>
+        </DialogActions>
+      </Dialog>
     </div>
   );
 };

@@ -27,14 +27,16 @@ export const AuthProvider = ({ children }) => {
     const res = await registerUser(formData);
     localStorage.setItem("token", res.data.token);
     setToken(res.data.token);
-    setUser(res.data.user); // assuming API sends { token, user }
+    setUser({ _id: res.data._id, name: res.data.name, email: res.data.email });
+    return res.data.recoveryCode; // Return recoveryCode for Register.jsx
   };
 
   const login = async (formData) => {
     const res = await loginUser(formData);
     localStorage.setItem("token", res.data.token);
     setToken(res.data.token);
-    setUser(res.data.user);
+    setUser({ _id: res.data._id, name: res.data.name, email: res.data.email });
+    return res.data.recoveryCode; // Return recoveryCode if present
   };
 
   const logout = () => {

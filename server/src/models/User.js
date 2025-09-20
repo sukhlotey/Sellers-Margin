@@ -15,7 +15,10 @@ const userSchema = new mongoose.Schema(
       type: String,
       required: [true, "Please enter a password"],
     },
-
+recoveryCode: {
+      type: String,
+      required: false, // Set after signup
+    },
     isSubscribed: { type: Boolean, default: false },
     plan: { type: String, enum: ["free","basic_monthly","all_monthly","annual"], default: "free" },
     planStart: { type: Date },

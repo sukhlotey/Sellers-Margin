@@ -9,6 +9,17 @@ const generateToken = (id) => {
   });
 };
 
+// Generate 10-character recovery code (e.g., 9X7F-A23K-TY88)
+const generateRecoveryCode = () => {
+  const chars = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
+  let code = "";
+  for (let i = 0; i < 10; i++) {
+    if (i === 4 || i === 7) code += "-"; // Add dashes at positions 4 and 7
+    else code += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return code;
+};
+
 // @desc Register new user
 export const registerUser = async (req, res) => {
   try {
@@ -25,11 +36,17 @@ export const registerUser = async (req, res) => {
 
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
+    const recoveryCode = generateRecoveryCode();
+    const hashedRecoveryCode = await bcrypt.hash(recoveryCode, salt);
+    const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
 
     const user = await User.create({
       name,
       email,
       password: hashedPassword,
+      recoveryCode: hashedRecoveryCode,
+      plainRecoveryCode: recoveryCode,
+      recoveryCodeExpires: expiresAt,
     });
 
     res.status(201).json({
@@ -37,12 +54,14 @@ export const registerUser = async (req, res) => {
       name: user.name,
       email: user.email,
       token: generateToken(user._id),
+      recoveryCode, // Send plain recovery code to frontend
     });
   } catch (error) {
     res.status(500).json({ message: "Server error", error: error.message });
   }
 };
 
+// @desc Login user
 export const loginUser = async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -54,12 +73,27 @@ export const loginUser = async (req, res) => {
     if (!isMatch)
       return res.status(400).json({ message: "Invalid credentials" });
 
-    res.json({
+    let response = {
       _id: user._id,
       name: user.name,
       email: user.email,
       token: generateToken(user._id),
-    });
+    };
+
+    // Generate new recovery code if none exists (post-password reset)
+    if (!user.recoveryCode) {
+      const salt = await bcrypt.genSalt(10);
+      const recoveryCode = generateRecoveryCode();
+      const hashedRecoveryCode = await bcrypt.hash(recoveryCode, salt);
+      const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
+      user.recoveryCode = hashedRecoveryCode;
+      user.plainRecoveryCode = recoveryCode;
+      user.recoveryCodeExpires = expiresAt;
+      await user.save();
+      response.recoveryCode = recoveryCode; // Include in response
+    }
+
+    res.json(response);
   } catch (error) {
     res.status(500).json({ message: "Server error", error: error.message });
   }
@@ -68,13 +102,14 @@ export const loginUser = async (req, res) => {
 // @desc Get user profile
 export const getUserProfile = async (req, res) => {
   try {
-    const user = await User.findById(req.user.id).select("-password");
+    const user = await User.findById(req.user.id).select("-password -recoveryCode -plainRecoveryCode -recoveryCodeExpires");
     res.json(user);
   } catch (error) {
     res.status(500).json({ message: "Server error" });
   }
 };
 
+// @desc Change password
 export const changePassword = async (req, res) => {
   try {
     const { currentPassword, newPassword } = req.body;
@@ -102,6 +137,70 @@ export const changePassword = async (req, res) => {
     res.json({ message: "Password changed successfully" });
   } catch (error) {
     console.error("changePassword error:", error);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
+// @desc Validate recovery code
+export const validateRecoveryCode = async (req, res) => {
+  try {
+    const { email, recoveryCode } = req.body;
+
+    if (!email || !recoveryCode) {
+      return res.status(400).json({ message: "Email and recovery code are required" });
+    }
+
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(400).json({ message: "Invalid email" });
+    }
+
+    if (!user.recoveryCode) {
+      return res.status(400).json({ message: "No recovery code set for this user" });
+    }
+
+    const isMatch = await bcrypt.compare(recoveryCode, user.recoveryCode);
+    if (!isMatch) {
+      return res.status(400).json({ message: "Invalid recovery code" });
+    }
+
+    res.json({ message: "Recovery code validated", userId: user._id });
+  } catch (error) {
+    console.error("validateRecoveryCode error:", error);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
+// @desc Reset password with recovery code
+export const resetPassword = async (req, res) => {
+  try {
+    const { userId, newPassword, confirmPassword } = req.body;
+
+    if (!userId || !newPassword || !confirmPassword) {
+      return res.status(400).json({ message: "User ID and passwords are required" });
+    }
+
+    if (newPassword !== confirmPassword) {
+      return res.status(400).json({ message: "Passwords do not match" });
+    }
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(newPassword, salt);
+
+    user.password = hashedPassword;
+    user.recoveryCode = null;
+    user.plainRecoveryCode = null;
+    user.recoveryCodeExpires = null;
+    await user.save();
+
+    res.json({ message: "Password reset successfully" });
+  } catch (error) {
+    console.error("resetPassword error:", error);
     res.status(500).json({ message: "Server error", error: error.message });
   }
 };

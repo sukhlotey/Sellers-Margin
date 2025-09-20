@@ -1,22 +1,21 @@
-import { useState, useContext, useEffect } from "react";
+import { useState, useContext } from "react";
 import { AuthContext } from "../context/AuthContext";
+import { useAlert } from "../context/AlertContext"; // Added import
 import { useNavigate, Link } from "react-router-dom";
-import { IoEyeOutline, IoEyeOffOutline } from "react-icons/io5"; // Added for eye icons
 import Logo from "../components/Logo";
+import { IoEyeOutline, IoEyeOffOutline } from "react-icons/io5";
 import "./pagesUI/Auth.css";
+import { Button, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions, Typography } from "@mui/material";
 
 const Login = () => {
-  const { user, login } = useContext(AuthContext);
+  const { login } = useContext(AuthContext);
+  const { showAlert } = useAlert(); // Added useAlert
   const navigate = useNavigate();
   const [formData, setFormData] = useState({ email: "", password: "" });
   const [isLoading, setIsLoading] = useState(false);
-  const [showPassword, setShowPassword] = useState(false); // State for password visibility
-
-  useEffect(() => {
-    if (user) {
-      navigate("/dashboard", { replace: true });
-    }
-  }, [user, navigate]);
+  const [showPassword, setShowPassword] = useState(false);
+  const [openRecoveryModal, setOpenRecoveryModal] = useState(false);
+  const [recoveryCode, setRecoveryCode] = useState("");
 
   const handleChange = (e) =>
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -25,18 +24,34 @@ const Login = () => {
     e.preventDefault();
     setIsLoading(true);
     try {
-      await login(formData);
-      navigate("/dashboard", { replace: true });
+      const recoveryCode = await login(formData);
+      showAlert("success", "User Logged in!");
+      if (recoveryCode) {
+        setRecoveryCode(recoveryCode);
+        setOpenRecoveryModal(true);
+      } else {
+        navigate("/dashboard", { replace: true });
+      }
     } catch (err) {
       console.error("Login error:", err);
-      alert(err.response?.data?.message || "Login failed. Please try again.");
-    } finally {
+      showAlert("error", err.response?.data?.message || "Login failed. Please try again.");
       setIsLoading(false);
     }
   };
 
   const togglePasswordVisibility = () => {
     setShowPassword(!showPassword);
+  };
+
+  const handleCopyCode = () => {
+    navigator.clipboard.writeText(recoveryCode);
+    showAlert("success", "Recovery code copied to clipboard!");
+  };
+
+  const handleModalClose = () => {
+    setOpenRecoveryModal(false);
+    setIsLoading(false);
+    navigate("/dashboard", { replace: true });
   };
 
   return (
@@ -46,22 +61,22 @@ const Login = () => {
           <div style={{ display: "flex", justifyContent: "center", alignItems: "center" }}>
             <Logo />
           </div>
-          <p>Please sign in to access your account</p>
+          <p>Sign in to access your account</p>
         </div>
-
+        
         <form onSubmit={handleSubmit} className="auth-form">
           <div className="form-group">
             <label htmlFor="email">Email</label>
-            <input
-              type="email"
+            <input 
+              type="email" 
               id="email"
-              name="email"
-              placeholder="Enter your email"
+              name="email" 
+              placeholder="Enter your email" 
               onChange={handleChange}
-              required
+              required 
             />
           </div>
-
+          
           <div className="form-group">
             <label htmlFor="password">Password</label>
             <div className="password-input-container">
@@ -78,18 +93,44 @@ const Login = () => {
               </span>
             </div>
           </div>
-
+          
           <button type="submit" className="auth-button" disabled={isLoading}>
-            {isLoading ? <div className="spinner"></div> : "Sign In"}
+            {isLoading ? (
+              <div className="spinner"></div>
+            ) : (
+              "Sign In"
+            )}
           </button>
         </form>
-
+        
         <div className="auth-footer">
           <p>
             Don't have an account? <Link to="/register">Sign up</Link>
           </p>
+          <p>
+            Forgot your password? <Link to="/forgot-password">Reset it</Link>
+          </p>
         </div>
       </div>
+
+      {/* Recovery Code Modal */}
+      <Dialog open={openRecoveryModal} onClose={handleModalClose}>
+        <DialogTitle>Save Your New Recovery Code</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            Save this new code in a safe place. It can reset your password once if you lose access to your account.
+          </DialogContentText>
+          <Typography variant="h6" align="center" sx={{ my: 2 }}>
+            {recoveryCode}
+          </Typography>
+          <Button variant="contained" onClick={handleCopyCode} fullWidth>
+            Copy Code
+          </Button>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleModalClose}>Confirm</Button>
+        </DialogActions>
+      </Dialog>
     </div>
   );
 };

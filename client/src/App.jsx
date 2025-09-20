@@ -14,6 +14,7 @@ import PaymentPage from "./modules/Subscription/PaymentPage";
 import Loading from "./components/Loading";
 import { SubscriptionProvider } from "./context/SubscriptionContext";
 import Setting from "./pages/Setting";
+import ForgotPasswordPage from "./pages/ForgotPasswordPage";
 
 const PrivateRoute = ({ children }) => {
   const { user, loading } = useContext(AuthContext);
@@ -77,7 +78,8 @@ function App() {
                     }
                   />
                   <Route path="/settings" element={<PrivateRoute><Setting /></PrivateRoute>} />
-
+                  <Route path="/forgot-password" element={<ForgotPasswordPage/>} />
+                  
                   {/* Default redirect */}
                   <Route path="/" element={<Navigate to="/dashboard" />} />
                 </Routes>
