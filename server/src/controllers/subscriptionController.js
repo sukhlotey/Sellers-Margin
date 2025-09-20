@@ -184,3 +184,13 @@ export const getPlans = (req, res) => {
   ];
   res.json(plans);
 };
+
+export const getBillingHistory = async (req, res) => {
+  try {
+    const subscriptions = await Subscription.find({ userId: req.user._id }).sort({ createdAt: -1 });
+    res.json(subscriptions);
+  } catch (error) {
+    console.error("getBillingHistory error:", error);
+    res.status(500).json({ message: "Error fetching billing history", error: error.message });
+  }
+};

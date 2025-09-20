@@ -28,9 +28,6 @@ Our modules are designed to make selling simpler, faster, and more profitable:
 
 **GST & Settlement Reconciliation**  
    Upload your settlement reports and get instant GST summaries, ITC claims, and short-payment detection. Save time on compliance and recover lost money.
-
-**AI Product Listing Optimizer**  
-   Boost your sales with AI-generated SEO-friendly titles, bullet points, and keywords. Rank higher in search results without spending big on ads.
   `;
 
   // Hindi welcome message
@@ -46,9 +43,6 @@ Our modules are designed to make selling simpler, faster, and more profitable:
 
 **GST और सेटलमेंट रिकॉन्सिलिएशन**  
    अपना सेटलमेंट रिपोर्ट अपलोड करें और तुरंत GST सारांश, ITC क्लेम और शॉर्ट-पेमेंट डिटेक्शन पाएँ। अकाउंटिंग में समय बचाएँ और छुपा हुआ पैसा वापस पाएँ।
-
-**AI प्रोडक्ट लिस्टिंग ऑप्टिमाइज़र**  
-   AI की मदद से SEO-फ्रेंडली टाइटल, बुलेट पॉइंट्स और कीवर्ड्स जनरेट करें। बिना ज्यादा ऐड खर्च किए सर्च रिज़ल्ट्स में ऊपर आएँ और बिक्री बढ़ाएँ।
   `;
 
   // Select message based on language

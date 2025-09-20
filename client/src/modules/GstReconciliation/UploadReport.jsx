@@ -1,23 +1,29 @@
 import { useContext, useState, useRef } from "react";
 import { GstContext } from "../../context/GstContext";
 import { AuthContext } from "../../context/AuthContext";
+import { SubscriptionContext } from "../../context/SubscriptionContext";
 import { uploadSettlement } from "../../api/gstApi";
 import * as XLSX from "xlsx";
 import { saveAs } from "file-saver";
 import { FaFileUpload, FaDownload, FaSave } from "react-icons/fa";
 import { VscOpenPreview } from "react-icons/vsc";
-import { useAlert } from '../../context/AlertContext';
+import { useAlert } from "../../context/AlertContext";
+import { useNavigate } from "react-router-dom";
+import axios from "axios";
 import "./gstSettlement.css";
 
 const UploadReport = () => {
   const { setSummary, setReports } = useContext(GstContext);
   const { token } = useContext(AuthContext);
+  const { subscription } = useContext(SubscriptionContext);
   const [file, setFile] = useState(null);
   const [marketplace, setMarketplace] = useState("generic");
   const [uploadResult, setUploadResult] = useState(null);
   const [showPreview, setShowPreview] = useState(false);
+  const [showPlansModal, setShowPlansModal] = useState(false);
   const fileInputRef = useRef(null);
   const { showAlert } = useAlert();
+  const navigate = useNavigate();
 
   // Supported columns based on columnMap from settlementParser.js
   const supportedColumns = [
@@ -36,8 +42,34 @@ const UploadReport = () => {
     { internal: "netPayout", names: ["settlement-amount", "net-settlement-amount", "total-settlement", "payout", "net-amount", "net-payout", "amount-paid", "Settlement Value (Rs)"] },
   ];
 
+  // Plans to display in modal (all_monthly and annual)
+  const premiumPlans = [
+    { id: "all_monthly", name: "All Access Monthly", price: 499, duration: "30 days" },
+    { id: "annual", name: "All Access Annually", price: 1799, duration: "365 days" },
+  ];
+
   const handleFileChange = (e) => {
     setFile(e.target.files[0]);
+  };
+
+  const handleBuy = async (plan) => {
+    if (!token) {
+      showAlert("error", "Please login first!");
+      return;
+    }
+    try {
+      const res = await axios.post(
+        "http://localhost:5000/api/subscription/create-order",
+        { plan },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      console.log("Create order response:", res.data);
+      setShowPlansModal(false);
+      navigate("/payment", { state: { paymentData: { order: res.data.order, plan } } });
+    } catch (err) {
+      console.error("Error creating payment:", err.response?.data || err.message);
+      showAlert("error", err.response?.data?.message || "Error creating payment");
+    }
   };
 
   const handleUpload = async () => {
@@ -45,6 +77,13 @@ const UploadReport = () => {
       showAlert("error", "Please select a file first!");
       return;
     }
+
+    // Check subscription plan
+    if (!subscription.isSubscribed || subscription.plan === "free" || subscription.plan === "basic_monthly") {
+      setShowPlansModal(true);
+      return;
+    }
+
     try {
       const formData = new FormData();
       formData.append("file", file);
@@ -111,14 +150,14 @@ const UploadReport = () => {
 
     // Apply background colors based on Net Profit
     const range = XLSX.utils.decode_range(wsRecords["!ref"]);
-    for (let row = range.s.r + 1; row <= range.e.r; row++) { // Skip header row
-      const netProfitCell = `O${row + 1}`; // Net Profit is in column O
+    for (let row = range.s.r + 1; row <= range.e.r; row++) {
+      const netProfitCell = `O${row + 1}`;
       const netProfitValue = wsRecords[netProfitCell]?.v || 0;
       const fillStyle = netProfitValue < 0
-        ? { fill: { fgColor: { rgb: "FF0000" } } } // Red for negative
+        ? { fill: { fgColor: { rgb: "FF0000" } } }
         : netProfitValue > 0
-          ? { fill: { fgColor: { rgb: "00FF00" } } } // Green for positive
-          : {}; // No fill for zero
+          ? { fill: { fgColor: { rgb: "00FF00" } } }
+          : {};
       for (let col = range.s.c; col <= range.e.c; col++) {
         const cellAddress = XLSX.utils.encode_cell({ r: row, c: col });
         wsRecords[cellAddress] = wsRecords[cellAddress] || {};
@@ -144,15 +183,15 @@ const UploadReport = () => {
         </h3>
         <div className="gst-preview-section">
           <p>
-          Upload a CSV or Excel and will mapped to file with columns: Order ID, Product Name, Selling Price, Cost Price, Marketplace Fees, GST on Sales, GST on Fees, Net Settlement Amount, Settlement Date, Quantity.{" "}
-          <a
-            className="gst-preview-toggle"
-            style={{ cursor: "pointer" }}
-            onClick={() => setShowPreview(!showPreview)}
-          >
-        {showPreview ? "Hide Supported Columns" : "Show Supported Columns"} <VscOpenPreview/>
-          </a>
-        </p>
+            Upload a CSV or Excel and will mapped to file with columns: Order ID, Product Name, Selling Price, Cost Price, Marketplace Fees, GST on Sales, GST on Fees, Net Settlement Amount, Settlement Date, Quantity.{" "}
+            <a
+              className="gst-preview-toggle"
+              style={{ cursor: "pointer" }}
+              onClick={() => setShowPreview(!showPreview)}
+            >
+              {showPreview ? "Hide Supported Columns" : "Show Supported Columns"} <VscOpenPreview/>
+            </a>
+          </p>
           {showPreview && (
             <div className="gst-preview-table-container">
               <table className="gst-preview-table">
@@ -220,6 +259,83 @@ const UploadReport = () => {
           </div>
         )}
       </div>
+
+      {/* Plans Modal */}
+      {showPlansModal && (
+        <div className="modal-overlay" style={{
+          position: "fixed",
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: "rgba(0, 0, 0, 0.5)",
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          zIndex: 1000,
+        }}>
+          <div className="modal-content" style={{
+            backgroundColor: "#fff",
+            padding: "2rem",
+            borderRadius: "8px",
+            width: "80%",
+            maxWidth: "600px",
+            maxHeight: "80vh",
+            overflowY: "auto",
+            boxShadow: "0 4px 8px rgba(0, 0, 0, 0.2)",
+          }}>
+            <h2 style={{ marginBottom: "1rem" }}>Upgrade Your Plan</h2>
+            <p style={{ marginBottom: "1.5rem" }}>
+              The GST Settlement module requires an All Access Monthly or Annual plan. Choose a plan to unlock unlimited access to all modules.
+            </p>
+            <div style={{ display: "flex", gap: "1rem", flexWrap: "wrap" }}>
+              {premiumPlans.map((plan) => (
+                <div key={plan.id} style={{
+                  flex: "1",
+                  minWidth: "200px",
+                  padding: "1rem",
+                  border: "1px solid #ddd",
+                  borderRadius: "8px",
+                  textAlign: "center",
+                }}>
+                  <h3>{plan.name}</h3>
+                  <p>₹{plan.price} / {plan.duration}</p>
+                  <p>Unlimited access to all modules including GST Settlement</p>
+                  <button
+                    style={{
+                      backgroundColor: "#1976d2",
+                      color: "#fff",
+                      padding: "0.5rem 1rem",
+                      border: "none",
+                      borderRadius: "4px",
+                      cursor: "pointer",
+                      marginTop: "1rem",
+                    }}
+                    onClick={() => handleBuy(plan.id)}
+                  >
+                    Buy Now
+                  </button>
+                </div>
+              ))}
+            </div>
+            <button
+              style={{
+                backgroundColor: "#ccc",
+                color: "#000",
+                padding: "0.5rem 1rem",
+                border: "none",
+                borderRadius: "4px",
+                cursor: "pointer",
+                marginTop: "1.5rem",
+                width: "100%",
+              }}
+              onClick={() => setShowPlansModal(false)}
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

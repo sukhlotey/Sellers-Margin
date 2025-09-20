@@ -7,7 +7,7 @@ import { useNavigate } from "react-router-dom";
 import { CiCalculator2 } from "react-icons/ci";
 import { IoSaveOutline } from "react-icons/io5";
 import { RiDeleteBin7Line,RiCloseFill  } from "react-icons/ri";
-import { Alert, Snackbar, Modal, Box, Typography, Button, IconButton } from "@mui/material";
+import { Button, TextField, Typography, Table, TableBody, TableCell, TableHead, TableRow, Box, Paper, Alert, Snackbar, Modal, IconButton, Select, MenuItem, FormControl, InputLabel} from "@mui/material";
 import { getPlans, createPayment } from "../api/subscriptionApi";
 import "../modules/Subscription/Plans.css";
 
@@ -285,80 +285,133 @@ const saveRecord = async () => {
 
   return (
     <div className="profit-fee-card">
-      <div className="form-group">
-        <label>Product Name</label>
-        <input name="productName" value={inputs.productName} onChange={handleChange} />
-      </div>
-      <div className="form-group">
-        <label>Selling Price (₹)</label>
-        <input type="number" name="sellingPrice" value={inputs.sellingPrice} onChange={handleChange} />
-      </div>
-      <div className="form-group">
-        <label>Cost Price (₹)</label>
-        <input type="number" name="costPrice" value={inputs.costPrice} onChange={handleChange} />
-      </div>
-      <div className="form-group">
-        <label>Category</label>
-        <select name="category" value={inputs.category} onChange={handleChange}>
-          <option value="">--Select Category--</option>
-          <option value="General">General (15%)</option>
-          <option value="Electronics">Electronics (8%)</option>
-          <option value="Fashion">Fashion (15%)</option>
-          <option value="Books">Books (5%)</option>
-        </select>
-      </div>
-      <div className="form-group">
-        <label>Weight Slab</label>
-        <select name="weightSlab" value={inputs.weightSlab} onChange={handleChange}>
-          <option value="">--Select Weight Slab--</option>
-          <option value="0-500">0 - 500g (₹40)</option>
-          <option value="501-1000">501g - 1kg (₹70)</option>
-          <option value="1001-5000">1kg - 5kg (₹120)</option>
-          <option value="custom">Custom</option>
-        </select>
-        {inputs.weightSlab === "custom" && (
-          <>
-            <input
-              type="number"
-              placeholder="Enter custom weight (grams)"
-              name="customWeight"
-              value={inputs.customWeight}
-              onChange={handleChange}
-            />
-            <input
-              type="number"
-              placeholder="Enter custom shipping cost (₹)"
-              name="customShipping"
-              value={inputs.customShipping}
-              onChange={handleChange}
-            />
-          </>
-        )}
-      </div>
-      <div className="form-group">
-        <label>Ad Cost (₹)</label>
-        <input type="number" name="adCost" value={inputs.adCost} onChange={handleChange} />
-      </div>
-      <div className="form-group">
-        <label>Commission %</label>
-        <input type="number" name="commissionPercent" value={inputs.commissionPercent} onChange={handleChange} />
-      </div>
-      <div className="form-group">
-        <label>GST %</label>
-        <input type="number" name="gstPercent" value={inputs.gstPercent} onChange={handleChange} />
-      </div>
-      {!subscription?.isSubscribed && (
-        <p className="calc-count">Calculations used: {calcCount}/5</p>
-      )}
-      <button className="calc-btn" onClick={calculate}>
-        <CiCalculator2 /> Calculate
-      </button>
-      <button className="calc-btn" onClick={saveRecord}>
-        <IoSaveOutline /> Save
-      </button>
-      <button className="clear-btn" onClick={handleClear}>
-        <RiDeleteBin7Line /> Clear
-      </button>
+  <div className="settings-password-form">
+    <TextField
+      label="Product Name"
+      name="productName"
+      value={inputs.productName}
+      onChange={handleChange}
+      fullWidth
+      margin="normal"
+    />
+    <TextField
+      label="Selling Price (₹)"
+      type="number"
+      name="sellingPrice"
+      value={inputs.sellingPrice}
+      onChange={handleChange}
+      fullWidth
+      margin="normal"
+    />
+    <TextField
+      label="Cost Price (₹)"
+      type="number"
+      name="costPrice"
+      value={inputs.costPrice}
+      onChange={handleChange}
+      fullWidth
+      margin="normal"
+    />
+    <FormControl fullWidth margin="normal">
+  <InputLabel id="category-label">Category</InputLabel>
+  <Select
+    labelId="category-label"
+    name="category"
+    value={inputs.category}
+    onChange={handleChange}
+    label="Category"
+    displayEmpty
+  >
+    <MenuItem value="">
+      --Select Category--
+    </MenuItem>
+    <MenuItem value="General">General (15%)</MenuItem>
+    <MenuItem value="Electronics">Electronics (8%)</MenuItem>
+    <MenuItem value="Fashion">Fashion (15%)</MenuItem>
+    <MenuItem value="Books">Books (5%)</MenuItem>
+  </Select>
+</FormControl>
+<FormControl fullWidth margin="normal">
+  <InputLabel id="weight-slab-label">Weight Slab</InputLabel>
+  <Select
+    labelId="weight-slab-label"
+    name="weightSlab"
+    value={inputs.weightSlab}
+    onChange={handleChange}
+    label="Weight Slab"
+    displayEmpty
+  >
+    <MenuItem value="">
+      --Select Weight Slab--
+    </MenuItem>
+    <MenuItem value="0-500">0 - 500g (₹40)</MenuItem>
+    <MenuItem value="501-1000">501g - 1kg (₹70)</MenuItem>
+    <MenuItem value="1001-5000">1kg - 5kg (₹120)</MenuItem>
+    <MenuItem value="custom">Custom</MenuItem>
+  </Select>
+</FormControl>
+    {inputs.weightSlab === "custom" && (
+      <>
+        <TextField
+          label="Custom Weight (grams)"
+          type="number"
+          name="customWeight"
+          value={inputs.customWeight}
+          onChange={handleChange}
+          fullWidth
+          margin="normal"
+        />
+        <TextField
+          label="Custom Shipping Cost (₹)"
+          type="number"
+          name="customShipping"
+          value={inputs.customShipping}
+          onChange={handleChange}
+          fullWidth
+          margin="normal"
+        />
+      </>
+    )}
+    <TextField
+      label="Ad Cost (₹)"
+      type="number"
+      name="adCost"
+      value={inputs.adCost}
+      onChange={handleChange}
+      fullWidth
+      margin="normal"
+    />
+    <TextField
+      label="Commission %"
+      type="number"
+      name="commissionPercent"
+      value={inputs.commissionPercent}
+      onChange={handleChange}
+      fullWidth
+      margin="normal"
+    />
+    <TextField
+      label="GST %"
+      type="number"
+      name="gstPercent"
+      value={inputs.gstPercent}
+      onChange={handleChange}
+      fullWidth
+      margin="normal"
+    />
+  </div>
+  {!subscription?.isSubscribed && (
+    <p className="calc-count">Calculations used: {calcCount}/5</p>
+  )}
+  <button className="calc-btn" onClick={calculate}>
+    <CiCalculator2 /> Calculate
+  </button>
+  <button className="calc-btn" onClick={saveRecord}>
+    <IoSaveOutline /> Save
+  </button>
+  <button className="clear-btn" onClick={handleClear}>
+    <RiDeleteBin7Line /> Clear
+  </button>
       {result && (
         <div className={`result-card ${result.profit >= 0 ? "profit-positive" : "profit-negative"}`}>
           <p>

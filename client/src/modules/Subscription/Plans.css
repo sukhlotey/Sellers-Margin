@@ -35,15 +35,29 @@
   border-radius: 12px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   padding: 2rem;
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  transition: transform 0.3s ease, box-shadow 0.3s ease, opacity 0.5s ease;
   position: relative;
   overflow: hidden;
   min-height: 350px;
-  flex: 1 1 calc(25% - 1.5rem); /* Four cards per row, accounting for gap */
-  max-width: calc(25% - 1.5rem); /* Ensure equal width */
+  flex: 1 1 calc(25% - 1.5rem);
+  max-width: calc(25% - 1.5rem);
   display: flex;
   flex-direction: column;
   justify-content: space-between;
+  animation: fadeInUp 0.6s ease-out forwards;
+  opacity: 0;
+  animation-delay: calc(0.1s * var(--card-index));
+}
+
+@keyframes fadeInUp {
+  0% {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .plan-card:hover {

@@ -2,25 +2,29 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { useEffect, useContext } from "react";
 import { AuthContext } from "../../context/AuthContext";
 import { SubscriptionContext } from "../../context/SubscriptionContext";
+import { useAlert } from "../../context/AlertContext";
 import axios from "axios";
+import { Snackbar, Alert } from "@mui/material";
+import Loading from "../../components/Loading";
 
 const PaymentPage = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { token } = useContext(AuthContext);
   const { setSubscription } = useContext(SubscriptionContext);
+  const { showAlert } = useAlert();
   const paymentData = location.state?.paymentData;
 
   useEffect(() => {
     if (!paymentData || !paymentData.order || !paymentData.plan) {
       console.error("Missing payment data, order, or plan:", paymentData);
-      alert("Invalid payment data. Please try again.");
+      showAlert("error", "Invalid payment data. Please try again.");
       navigate("/subscription");
       return;
     }
 
     const options = {
-      key: process.env.REACT_APP_RAZORPAY_KEY_ID,
+      key: import.meta.env.VITE_RAZORPAY_KEY_ID || "rzp_test_RJSJUBsZz678SC",
       amount: paymentData.order.amount,
       currency: "INR",
       name: "Seller Sense",
@@ -51,11 +55,11 @@ const PaymentPage = () => {
                 : "Annual",
             expiry: verifyResponse.data.subscription.endDate,
           });
-          alert("Payment Successful! Subscription activated.");
+          showAlert("success", "Payment Successful! Subscription activated.");
           navigate("/subscription");
         } catch (err) {
           console.error("Payment verification error:", err.response?.data || err.message);
-          alert(`Payment verification failed: ${err.response?.data?.message || "Please try again."}`);
+          showAlert("error", err.response?.data?.message || "Payment verification failed. Please try again.");
           navigate("/subscription");
         }
       },
@@ -75,13 +79,13 @@ const PaymentPage = () => {
     const rzp = new window.Razorpay(options);
     rzp.on("payment.failed", function (response) {
       console.error("Payment failed:", response.error);
-      alert(`Payment failed: ${response.error.description}`);
+      showAlert("error", `Payment failed: ${response.error.description}`);
       navigate("/subscription");
     });
     rzp.open();
-  }, [paymentData, navigate, token, setSubscription]);
+  }, [paymentData, navigate, token, setSubscription, showAlert]);
 
-  return <h3>Processing Payment...</h3>;
+  return <><Loading/></>;
 };
 
 export default PaymentPage;
