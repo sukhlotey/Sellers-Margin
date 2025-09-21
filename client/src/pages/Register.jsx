@@ -3,14 +3,14 @@ import { AuthContext } from "../context/AuthContext";
 import { useNavigate, Link } from "react-router-dom";
 import Logo from "../components/Logo";
 import { IoEyeOutline, IoEyeOffOutline } from "react-icons/io5";
-import { useAlert } from "../context/AlertContext"; // Added import
+import { useAlert } from "../context/AlertContext";
 import "./pagesUI/Auth.css";
-import { Button, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions, Typography } from "@mui/material";
+import { Button, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions, Typography, TextField, Box, InputAdornment, IconButton } from "@mui/material";
 
 const Register = () => {
   const { register } = useContext(AuthContext);
   const navigate = useNavigate();
-    const { showAlert } = useAlert(); // Added useAlert
+  const { showAlert } = useAlert();
   const [formData, setFormData] = useState({ name: "", email: "", password: "" });
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -28,7 +28,6 @@ const Register = () => {
       showAlert("success", "User Registered!");
       setRecoveryCode(recoveryCode);
       setOpenRecoveryModal(true);
-
     } catch (err) {
       console.error("Registration error:", err);
       showAlert(err.response?.data?.message || "Registration failed. Please try again.");
@@ -62,54 +61,63 @@ const Register = () => {
         </div>
         
         <form onSubmit={handleSubmit} className="auth-form">
-          <div className="form-group">
-            <label htmlFor="name">Full Name</label>
-            <input 
-              type="text" 
-              id="name"
-              name="name" 
-              placeholder="Enter your full name" 
+          <Box className="form-group">
+            <TextField
+              label="Full Name"
+              name="name"
+              type="text"
+              value={formData.name}
               onChange={handleChange}
-              required 
+              placeholder="Enter your full name"
+              fullWidth
+              required
             />
-          </div>
+          </Box>
           
-          <div className="form-group">
-            <label htmlFor="email">Email</label>
-            <input 
-              type="email" 
-              id="email"
-              name="email" 
-              placeholder="Enter your email" 
+          <Box className="form-group">
+            <TextField
+              label="Email"
+              name="email"
+              type="email"
+              value={formData.email}
               onChange={handleChange}
-              required 
+              placeholder="Enter your email"
+              fullWidth
+              required
             />
-          </div>
+          </Box>
           
-          <div className="form-group">
-            <label htmlFor="password">Password</label>
-            <div className="password-input-container">
-              <input
-                type={showPassword ? "text" : "password"}
-                id="password"
-                name="password"
-                placeholder="Enter your password"
-                onChange={handleChange}
-                required
-              />
-              <span className="password-toggle" onClick={togglePasswordVisibility}>
-                {showPassword ? <IoEyeOffOutline /> : <IoEyeOutline />}
-              </span>
-            </div>
-          </div>
+          <Box className="form-group">
+            <TextField
+              label="Password"
+              name="password"
+              type={showPassword ? "text" : "password"}
+              value={formData.password}
+              onChange={handleChange}
+              placeholder="Enter your password"
+              fullWidth
+              required
+              InputProps={{
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <IconButton onClick={togglePasswordVisibility} edge="end">
+                      {showPassword ? <IoEyeOffOutline /> : <IoEyeOutline />}
+                    </IconButton>
+                  </InputAdornment>
+                ),
+              }}
+            />
+          </Box>
           
-          <button type="submit" className="auth-button" disabled={isLoading}>
-            {isLoading ? (
-              <div className="spinner"></div>
-            ) : (
-              "Create Account"
-            )}
-          </button>
+          <Button
+            type="submit"
+            variant="contained"
+            color="primary"
+            disabled={isLoading}
+            fullWidth
+          >
+            {isLoading ? <div className="spinner"></div> : "Create Account"}
+          </Button>
         </form>
         
         <div className="auth-footer">

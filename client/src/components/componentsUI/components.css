@@ -247,6 +247,8 @@ html {
 }
 
 .dashboard-header {
+  display: flex;
+  justify-content: space-between;
   background: var(--card-bg);
   padding: 2rem;
   border-radius: 12px;
@@ -428,7 +430,6 @@ html {
     font-size: 1.5rem;
   }
 
-
   .user-email {
     font-size: 0.95rem;
   }
@@ -459,9 +460,14 @@ html {
 }
 
 @media (max-width: 480px) {
-  .dashboard-content h2 {
-    font-size: 1.25rem;
+  .dashboard-content .welcome-message {
+    font-size: 2rem;
+    text-align: center;
   }
+ .dashboard-header  {
+display: flex;
+flex-direction: column;
+}
 
   .user-email {
     font-size: 0.875rem;

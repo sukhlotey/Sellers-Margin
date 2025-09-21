@@ -28,17 +28,17 @@
 }
 
 .form-group label {
-  font-weight: 600;
+  /* font-weight: 600; */
   margin-bottom: 0.4rem;
-  color: #1e293b;
+  color: #666667;
 }
 
-.form-group input {
+/* .form-group input {
   padding: 0.6rem;
   border: 1px solid #cbd5e1;
   border-radius: 8px;
   transition: border-color 0.3s ease, box-shadow 0.3s ease;
-}
+} */
 
 .form-group input:focus {
   outline: none;

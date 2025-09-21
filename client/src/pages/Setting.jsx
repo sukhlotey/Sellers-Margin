@@ -246,6 +246,8 @@ const handleFeedbackSubmit = async () => {
                 color="primary"
                 onClick={handleChangePassword}
                 sx={{ mt: 2 }}
+                style={{maxWidth: '200px'}}
+
               >
                 Change Password
               </Button>
@@ -367,6 +369,7 @@ const handleFeedbackSubmit = async () => {
         color="primary"
         onClick={handleFeedbackSubmit}
         disabled={!rating}
+        style={{maxWidth: '200px'}}
       >
         Submit Feedback
       </Button>

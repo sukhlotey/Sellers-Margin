@@ -8,7 +8,8 @@ import gstRoutes from "./routes/gstRoutes.js";
 import profitRoutes from "./routes/profitRoutes.js";
 import subscriptionRoutes from "./routes/subscriptionRoutes.js"; // NEW
 import feedbackRoutes from "./routes/feedbackRoute.js";
-
+import adminRoutes from "./routes/adminRoute.js";
+ 
 dotenv.config();
 connectDB();
 
@@ -23,6 +24,7 @@ app.use("/api/gst", gstRoutes);
 app.use("/api/profit-fee", profitRoutes);
 app.use("/api/subscription", subscriptionRoutes); // NEW
 app.use("/api/feedback",  feedbackRoutes);
+app.use("/api/admin", adminRoutes); // Added
 
 app.get("/", (req, res) => {
   res.send("Seller Sense AI Module Running 🚀");

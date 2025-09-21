@@ -91,10 +91,18 @@ Our modules are designed to make selling simpler, faster, and more profitable:
     <DashboardLayout>
       <div className="dashboard-content">
         <div className="dashboard-header">
-          <h2>
+        <div className="user-info">
+          <h2 className="welcome-message">
             Welcome <span className="username">{user.name}</span> <span className="emoji-wave"></span>
           </h2>
           <p className="user-email">{user.email}</p>
+        </div>
+         <div className="spacer">
+            <section className="subscription-overview">
+          <h2>Your Subscription</h2>
+          <SubscriptionStatus />
+        </section>
+        </div>
         </div>
 
         {showWelcomeCard && (
@@ -111,10 +119,7 @@ Our modules are designed to make selling simpler, faster, and more profitable:
             </div>
           </div>
         )}
-        <section className="subscription-overview">
-          <h3>Your Subscription</h3>
-          <SubscriptionStatus />
-        </section>
+      
         <section className="modules-preview">
           <h3 className="section-title">Quick Access</h3>
           <div className="cards">

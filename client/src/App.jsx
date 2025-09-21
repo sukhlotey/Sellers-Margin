@@ -15,7 +15,9 @@ import Loading from "./components/Loading";
 import { SubscriptionProvider } from "./context/SubscriptionContext";
 import Setting from "./pages/Setting";
 import ForgotPasswordPage from "./pages/ForgotPasswordPage";
-
+import AdminLogin from "./pages/AdminLogin";
+import AdminDashboard from "./pages/AdminDashboard";
+// import PrivateAdminRoute from "./components/PrivateAdminRoute";
 const PrivateRoute = ({ children }) => {
   const { user, loading } = useContext(AuthContext);
 
@@ -82,6 +84,8 @@ function App() {
                   
                   {/* Default redirect */}
                   <Route path="/" element={<Navigate to="/dashboard" />} />
+                   <Route path="/admin/login" element={<AdminLogin />} />
+              <Route path="/admin/dashboard" element={<AdminDashboard/>}/>
                 </Routes>
               </Router>
             </AlertProvider>

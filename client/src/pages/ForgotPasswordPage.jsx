@@ -9,7 +9,7 @@ import "./pagesUI/Auth.css";
 const ForgotPasswordPage = () => {
   const { user } = useContext(AuthContext);
   const navigate = useNavigate();
-  const [step, setStep] = useState(1); // 1: Enter email/code, 2: Reset password
+  const [step, setStep] = useState(1);
   const [formData, setFormData] = useState({
     email: "",
     recoveryCode: "",
@@ -20,14 +20,13 @@ const ForgotPasswordPage = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  // Redirect if already authenticated
   if (user) {
     navigate("/dashboard", { replace: true });
   }
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
-    setError(null); // Clear error on input change
+    setError(null);
   };
 
   const handleValidateCode = async (e) => {
@@ -39,7 +38,7 @@ const ForgotPasswordPage = () => {
         recoveryCode: formData.recoveryCode,
       });
       setUserId(res.data.userId);
-      setStep(2); // Move to password reset step
+      setStep(2);
       setError(null);
     } catch (err) {
       setError(err.response?.data?.message || "Failed to validate recovery code.");
@@ -91,30 +90,30 @@ const ForgotPasswordPage = () => {
 
         {step === 1 ? (
           <form onSubmit={handleValidateCode} className="auth-form">
-            <div className="form-group">
-              <label htmlFor="email">Email</label>
-              <input
-                type="email"
-                id="email"
+            <Box className="form-group">
+              <TextField
+                label="Email"
                 name="email"
-                placeholder="Enter your email"
+                type="email"
                 value={formData.email}
                 onChange={handleChange}
+                placeholder="Enter your email"
+                fullWidth
                 required
               />
-            </div>
-            <div className="form-group">
-              <label htmlFor="recoveryCode">Recovery Code</label>
-              <input
-                type="text"
-                id="recoveryCode"
+            </Box>
+            <Box className="form-group">
+              <TextField
+                label="Recovery Code"
                 name="recoveryCode"
-                placeholder="Enter your recovery code (e.g., 9X7F-A23K-TY88)"
+                type="text"
                 value={formData.recoveryCode}
                 onChange={handleChange}
+                placeholder="Enter your recovery code (e.g., 9X7F-A23K-TY88)"
+                fullWidth
                 required
               />
-            </div>
+            </Box>
             <Button
               type="submit"
               variant="contained"
@@ -127,30 +126,30 @@ const ForgotPasswordPage = () => {
           </form>
         ) : (
           <form onSubmit={handleResetPassword} className="auth-form">
-            <div className="form-group">
-              <label htmlFor="newPassword">New Password</label>
-              <input
-                type="password"
-                id="newPassword"
+            <Box className="form-group">
+              <TextField
+                label="New Password"
                 name="newPassword"
-                placeholder="Enter new password"
+                type="password"
                 value={formData.newPassword}
                 onChange={handleChange}
+                placeholder="Enter new password"
+                fullWidth
                 required
               />
-            </div>
-            <div className="form-group">
-              <label htmlFor="confirmPassword">Confirm Password</label>
-              <input
-                type="password"
-                id="confirmPassword"
+            </Box>
+            <Box className="form-group">
+              <TextField
+                label="Confirm Password"
                 name="confirmPassword"
-                placeholder="Confirm new password"
+                type="password"
                 value={formData.confirmPassword}
                 onChange={handleChange}
+                placeholder="Confirm new password"
+                fullWidth
                 required
               />
-            </div>
+            </Box>
             <Button
               type="submit"
               variant="contained"
