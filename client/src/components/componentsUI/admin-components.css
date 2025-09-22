@@ -1,0 +1,262 @@
+/* Root Variables */
+:root {
+  --bg: #0f172a; /* Dark slate for navbar/sidebar */
+  --primary: #2563eb; /* Professional blue */
+  --secondary: #10b981; /* Subtle green accent */
+  --text-dark: #1f2937; /* Dark gray for text */
+  --text-light: #f9fafb; /* Off-white for light text */
+  --card-bg: #ffffff; /* White for cards */
+  --card-border: #e5e7eb; /* Light gray border */
+  --shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  --transition: all 0.2s ease-in-out;
+  --font-primary: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+/* Global Reset */
+body,
+html {
+  overflow-x: hidden;
+  font-family: var(--font-primary);
+  margin: 0;
+  padding: 0;
+  background: #f5f5f5; /* Light gray background for professional look */
+}
+
+/* Dashboard Layout */
+.admin-dashboard-container {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+.main-layout {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+}
+
+/* Adjust when sidebar is open on desktop */
+.admin-dashboard-container.sidebar-open .content-area {
+  margin-left: 260px;
+}
+
+.admin-dashboard-container.sidebar-open .admin-navbar {
+  margin-left: 260px;
+  width: calc(100% - 260px);
+}
+
+/* Content Area */
+.content-area {
+  flex: 1;
+  padding: 2.5rem;
+  transition: margin-left 0.3s ease;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+/* Navbar */
+.admin-navbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: var(--bg);
+  color: var(--text-light);
+  padding: 1rem 2rem;
+  position: sticky;
+  top: 0;
+  z-index: 1100;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.nav-left {
+  display: flex;
+  align-items: center;
+  gap: 1.2rem;
+}
+
+.logo-placeholder {
+  width: 40px;
+  height: 40px;
+  background: var(--primary);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-light);
+  font-weight: 600;
+  font-size: 1.1rem;
+}
+
+.app-name {
+  font-size: 1.5rem;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+}
+
+.hamburger {
+  background: none;
+  border: none;
+  color: var(--text-light);
+  font-size: 1.6rem;
+  cursor: pointer;
+  display: block;
+}
+
+.nav-right .avatar {
+  background: var(--secondary);
+  color: var(--text-dark);
+  font-weight: 600;
+  border-radius: 50%;
+  padding: 0.5rem 0.9rem;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.nav-right .avatar:hover {
+  background: #059669; /* Darker green on hover */
+}
+
+.dropdown {
+  position: absolute;
+  top: 48px;
+  right: 0;
+  background: var(--card-bg);
+  color: var(--text-dark);
+  padding: 1rem;
+  border-radius: 8px;
+  box-shadow: var(--shadow);
+  min-width: 200px;
+  border: 1px solid var(--card-border);
+}
+
+.dropdown p {
+  margin: 0.5rem 0;
+  font-size: 0.95rem;
+}
+
+.dropdown button {
+  background: #dc2626;
+  color: var(--text-light);
+  border: none;
+  padding: 0.6rem;
+  border-radius: 6px;
+  cursor: pointer;
+  margin-top: 0.8rem;
+  width: 100%;
+  font-weight: 500;
+  transition: var(--transition);
+}
+
+.dropdown button:hover {
+  background: #b91c1c;
+}
+
+/* Sidebar */
+.admin-sidebar {
+  background: var(--bg);
+  height: 100vh;
+  padding: 1.5rem;
+  transition: var(--transition);
+  z-index: 1000;
+  overflow-y: auto;
+}
+
+.admin-sidebar.desktop {
+  width: 260px;
+  position: fixed;
+  top: 0;
+  left: -260px;
+}
+
+.admin-sidebar.desktop.open {
+  left: 0;
+}
+
+.admin-sidebar.mobile {
+  position: fixed;
+  top: 0;
+  left: -100%;
+  width: 80%;
+  max-width: 280px;
+  box-shadow: 2px 0 8px rgba(0, 0, 0, 0.15);
+  background: var(--bg);
+}
+
+.admin-sidebar.mobile.open {
+  left: 0;
+}
+
+.admin-sidebar ul {
+  list-style: none;
+  padding: 0;
+}
+
+.admin-sidebar li {
+  margin: 1rem 0;
+}
+
+.admin-sidebar a {
+  text-decoration: none;
+  color: var(--text-light);
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0.8rem 1rem;
+  border-radius: 8px;
+  transition: var(--transition);
+}
+
+.admin-sidebar a:hover {
+  background: #1e293b;
+  color: var(--text-light);
+}
+
+.admin-sidebar a.active-link {
+  background: var(--primary);
+  color: var(--text-light);
+}
+
+.close-btn {
+  display: none;
+  background: none;
+  border: none;
+  font-size: 1.4rem;
+  margin-bottom: 1rem;
+  cursor: pointer;
+  color: var(--text-light);
+}
+
+.admin-sidebar.mobile .close-btn {
+  display: block;
+  margin-top: 70px;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 1024px) {
+  .content-area {
+    padding: 2rem;
+  }
+
+  .admin-dashboard-container.sidebar-open .content-area {
+    margin-left: 0;
+  }
+}
+
+@media (max-width: 768px) {
+  .content-area {
+    padding: 1.5rem;
+  }
+
+  .nav-left {
+    margin-top: 0;
+    margin-left: 0;
+  }
+}
+
+@media (max-width: 480px) {
+  .content-area {
+    padding: 1.2rem;
+  }
+}

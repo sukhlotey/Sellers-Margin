@@ -1,0 +1,35 @@
+.counters-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+  padding: 1px;
+}
+
+/* Ensure cards inside grid are styled consistently */
+.counters-grid .MuiCard-root {
+  text-align: center;
+  box-shadow: 0px 3px 6px rgba(0, 0, 0, 0.16);
+  border-radius: 12px;
+}
+
+/* Ensure Plan Distribution card matches counters card height */
+.plan-distribution-card {
+  height: 100%;
+  border: 2px solid #e0e0e0; /* Distinct border for new design */
+}
+.rating-dis {
+ width: 100%;
+}
+
+@media (max-width: 768px) {
+  .plan-distribution-card {
+  width: 100%;
+  background-color: brown;
+}
+}
+
+@media (max-width: 480px) {
+  .plan-distribution-card {
+  width: 100%;
+}
+}

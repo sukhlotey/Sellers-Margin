@@ -177,15 +177,15 @@ const handleFeedbackSubmit = async () => {
     }
   };
 
-  const toggleRecoveryCodeVisibility = () => {
-    setShowRecoveryCode(!showRecoveryCode);
-  };
+  // const toggleRecoveryCodeVisibility = () => {
+  //   setShowRecoveryCode(!showRecoveryCode);
+  // };
 
   return (
     <DashboardLayout>
       <div className="settings-container">
         <Typography variant="h4" gutterBottom>
-          Settings
+          Account
         </Typography>
 
         <div className="settings-top-row">
@@ -375,19 +375,19 @@ const handleFeedbackSubmit = async () => {
       </Button>
     </Box>
   </Paper>
-
+ 
         {/* Data & Privacy */}
         <Paper className="settings-section settings-card-full" style={{ "--card-index": 3 }}>
           <Typography variant="h6" gutterBottom>
             Data & Privacy
           </Typography>
           <Typography>
-            <a href="https://example.com/privacy-policy" target="_blank" rel="noopener">
+            <a href="/privacypolicy.pdf" target="_blank" rel="noopener">
               Privacy Policy
             </a>
           </Typography>
           <Typography>
-            <a href="https://example.com/terms-of-service" target="_blank" rel="noopener">
+            <a href="/termsofseller.pdf" target="_blank" rel="noopener">
               Terms of Service
             </a>
           </Typography>

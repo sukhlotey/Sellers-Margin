@@ -5,6 +5,7 @@ import { RiMoneyRupeeCircleLine } from "react-icons/ri";
 import { IoSettingsOutline, IoHomeOutline } from "react-icons/io5";
 import { GrDocumentConfig } from "react-icons/gr";
 import { RiSecurePaymentLine } from "react-icons/ri";
+import { VscAccount } from "react-icons/vsc";
 
 const Sidebar = ({ isOpen, isMobile, toggleSidebar }) => {
     return (
@@ -57,7 +58,7 @@ const Sidebar = ({ isOpen, isMobile, toggleSidebar }) => {
                         className={({ isActive }) => isActive ? "active-link" : ""}
                         onClick={isMobile ? toggleSidebar : null}
                     >
-                        <IoSettingsOutline size={25} /> Settings
+                        <VscAccount size={25} /> Account
                     </NavLink>
                 </li>
             </ul>

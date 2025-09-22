@@ -17,7 +17,8 @@ import Setting from "./pages/Setting";
 import ForgotPasswordPage from "./pages/ForgotPasswordPage";
 import AdminLogin from "./pages/AdminLogin";
 import AdminDashboard from "./pages/AdminDashboard";
-// import PrivateAdminRoute from "./components/PrivateAdminRoute";
+import AdminRatings from "./pages/AdminRatings";
+import PrivateAdminRoute from "./components/PrivateAdminRoute";
 const PrivateRoute = ({ children }) => {
   const { user, loading } = useContext(AuthContext);
 
@@ -80,12 +81,17 @@ function App() {
                     }
                   />
                   <Route path="/settings" element={<PrivateRoute><Setting /></PrivateRoute>} />
-                  <Route path="/forgot-password" element={<ForgotPasswordPage/>} />
-                  
+                  <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+
                   {/* Default redirect */}
                   <Route path="/" element={<Navigate to="/dashboard" />} />
-                   <Route path="/admin/login" element={<AdminLogin />} />
-              <Route path="/admin/dashboard" element={<AdminDashboard/>}/>
+                  <Route path="/admin/login" element={<AdminLogin />} />
+                  <Route path="/admin/dashboard" element={<PrivateAdminRoute>
+                    <AdminDashboard />
+                  </PrivateAdminRoute>} />
+                  <Route path="/admin/ratings" element={<PrivateAdminRoute>
+                    <AdminRatings />
+                  </PrivateAdminRoute>} />
                 </Routes>
               </Router>
             </AlertProvider>
