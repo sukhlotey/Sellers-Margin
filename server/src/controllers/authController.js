@@ -81,8 +81,8 @@ export const loginUser = async (req, res) => {
       token: generateToken(user._id),
     };
 
-    // Generate new recovery code if none exists (post-password reset)
-    if (!user.recoveryCode) {
+    // Generate new recovery code only if last reset was via forgot-password
+    if (!user.recoveryCode && user.lastResetSource === "forgot-password") {
       const salt = await bcrypt.genSalt(10);
       const recoveryCode = generateRecoveryCode();
       const hashedRecoveryCode = await bcrypt.hash(recoveryCode, salt);
@@ -99,6 +99,7 @@ export const loginUser = async (req, res) => {
     res.status(500).json({ message: "Server error", error: error.message });
   }
 };
+
 
 // @desc Get user profile
 export const getUserProfile = async (req, res) => {
@@ -175,7 +176,7 @@ export const validateRecoveryCode = async (req, res) => {
 // @desc Reset password with recovery code
 export const resetPassword = async (req, res) => {
   try {
-    const { userId, newPassword, confirmPassword } = req.body;
+    const { userId, newPassword, confirmPassword, source } = req.body;
 
     if (!userId || !newPassword || !confirmPassword) {
       return res.status(400).json({ message: "User ID and passwords are required" });
@@ -192,14 +193,30 @@ export const resetPassword = async (req, res) => {
 
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(newPassword, salt);
+    
+    // Generate new recovery code for settings reset
+    let newRecoveryCode = null;
+    if (source === "settings") {
+      newRecoveryCode = generateRecoveryCode();
+      const hashedRecoveryCode = await bcrypt.hash(newRecoveryCode, salt);
+      const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
+      user.recoveryCode = hashedRecoveryCode;
+      user.plainRecoveryCode = newRecoveryCode;
+      user.recoveryCodeExpires = expiresAt;
+    } else {
+      user.recoveryCode = null;
+      user.plainRecoveryCode = null;
+      user.recoveryCodeExpires = null;
+    }
 
     user.password = hashedPassword;
-    user.recoveryCode = null;
-    user.plainRecoveryCode = null;
-    user.recoveryCodeExpires = null;
+    user.lastResetSource = source || "forgot-password";
     await user.save();
 
-    res.json({ message: "Password reset successfully" });
+    res.json({
+      message: "Password reset successfully",
+      ...(source === "settings" && { recoveryCode: newRecoveryCode }),
+    });
   } catch (error) {
     console.error("resetPassword error:", error);
     res.status(500).json({ message: "Server error", error: error.message });

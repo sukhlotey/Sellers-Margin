@@ -19,6 +19,11 @@ const userSchema = new mongoose.Schema(
       type: String,
       required: false, // Set after signup
     },
+     lastResetSource: {
+      type: String,
+      enum: ["settings", "forgot-password", null],
+      default: null,
+    },
     lastLogin: {
     type: Date,
   },

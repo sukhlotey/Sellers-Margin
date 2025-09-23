@@ -4,12 +4,14 @@ import { SubscriptionContext } from "../context/SubscriptionContext";
 import { useAlert } from "../context/AlertContext";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
-import { Button, TextField, Typography, Table, TableBody, TableCell, TableHead, TableRow, Box, Paper, IconButton } from "@mui/material";
+import { validateRecoveryCode, resetPassword } from "../api/authApi";
+import { Button, TextField, Typography, Table, TableBody, TableCell, TableHead, TableRow, Box, Paper, Alert, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions } from "@mui/material";
 import { saveAs } from "file-saver";
 import "./pagesUI/Settings.css";
 import DashboardLayout from "../layout/DashboardLayout";
 import jsPDF from "jspdf";
-import { FaDownload, FaStar, FaRegStar} from "react-icons/fa";
+import { FaDownload, FaStar, FaRegStar } from "react-icons/fa";
+import logo from "../assets/sellersense1.png";
 
 const Setting = () => {
   const { user, token } = useContext(AuthContext);
@@ -22,12 +24,19 @@ const Setting = () => {
     confirmPassword: "",
   });
   const [rating, setRating] = useState(0);
-const [feedback, setFeedback] = useState("");
+  const [feedback, setFeedback] = useState("");
+  const [charCount, setCharCount] = useState(0);
   const [billingHistory, setBillingHistory] = useState([]);
-  const [showRecoveryCode, setShowRecoveryCode] = useState(false);
-  // const [recoveryCode, setRecoveryCode] = useState("Use the code provided during signup");
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
+  const [secretCode, setSecretCode] = useState("");
+  const [forgotPasswordData, setForgotPasswordData] = useState({
+    newPassword: "",
+    confirmPassword: "",
+  });
+  const [newRecoveryCode, setNewRecoveryCode] = useState("");
+  const [openRecoveryModal, setOpenRecoveryModal] = useState(false);
 
-  // Fetch billing history and recovery code
+  // Fetch billing history
   useEffect(() => {
     const fetchBillingHistory = async () => {
       try {
@@ -40,24 +49,8 @@ const [feedback, setFeedback] = useState("");
         showAlert("error", "Failed to load billing history.");
       }
     };
-    // const fetchRecoveryCode = async () => {
-    //   try {
-    //     const res = await axios.get("http://localhost:5000/api/auth/recovery-code", {
-    //       headers: { Authorization: `Bearer ${token}` },
-    //     });
-    //     if (res.data.recoveryCode) {
-    //       setRecoveryCode(res.data.recoveryCode);
-    //     } else {
-    //       setRecoveryCode("Use the code provided during signup");
-    //     }
-    //   } catch (err) {
-    //     console.error("Error fetching recovery code:", err);
-    //     showAlert("error", err.response?.data?.message || "Failed to load recovery code.");
-    //   }
-    // };
     if (token) {
       fetchBillingHistory();
-      // fetchRecoveryCode();
     }
   }, [token, showAlert]);
 
@@ -90,49 +83,127 @@ const [feedback, setFeedback] = useState("");
     }
   };
 
-// Submit feedback
-const handleFeedbackSubmit = async () => {
-  try {
-    await axios.post(
-      "http://localhost:5000/api/feedback/submit",
-      { rating, feedback },
-      { headers: { Authorization: `Bearer ${token}` } }
-    );
-    showAlert("success", "Thank you for your feedback!");
-    setRating(0);
-    setFeedback("");
-  } catch (err) {
-    showAlert("error", err.response?.data?.message || "Failed to submit feedback.");
-  }
-};
+  // Handle forgot password input
+  const handleForgotPasswordChange = (e) => {
+    setForgotPasswordData({ ...forgotPasswordData, [e.target.name]: e.target.value });
+  };
+
+  // Handle secret code input
+  const handleSecretCodeChange = (e) => {
+    setSecretCode(e.target.value);
+  };
+
+  // Submit forgot password
+  const handleForgotPasswordSubmit = async () => {
+    const { newPassword, confirmPassword } = forgotPasswordData;
+    if (!secretCode) {
+      showAlert("error", "Secret code is required.");
+      return;
+    }
+    if (!newPassword || !confirmPassword) {
+      showAlert("error", "New password and confirm password are required.");
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      showAlert("error", "New passwords do not match.");
+      return;
+    }
+    try {
+      // Validate secret code
+      const res = await validateRecoveryCode({ email: user.email, recoveryCode: secretCode });
+      // Reset password
+      const resetRes = await resetPassword({ 
+        userId: res.data.userId, 
+        newPassword, 
+        confirmPassword,
+        source: "settings"
+      });
+      showAlert("success", "Password reset successfully!");
+      setNewRecoveryCode(resetRes.data.recoveryCode || "");
+      setOpenRecoveryModal(true);
+      setSecretCode("");
+      setForgotPasswordData({ newPassword: "", confirmPassword: "" });
+      setShowForgotPassword(false);
+    } catch (err) {
+      showAlert("error", err.response?.data?.message || "Failed to reset password.");
+    }
+  };
+
+  // Handle copy code
+  const handleCopyCode = () => {
+    navigator.clipboard.writeText(newRecoveryCode);
+    showAlert("success", "Recovery code copied to clipboard!");
+  };
+
+  // Handle modal close
+  const handleModalClose = () => {
+    setOpenRecoveryModal(false);
+    setNewRecoveryCode("");
+  };
+
+  // Handle feedback input
+  const handleFeedbackChange = (e) => {
+    const input = e.target.value;
+    const nonWhitespaceCount = input.replace(/\s/g, "").length;
+    if (nonWhitespaceCount <= 200) {
+      setFeedback(input);
+      setCharCount(nonWhitespaceCount);
+    }
+  };
+
+  // Submit feedback
+  const handleFeedbackSubmit = async () => {
+    const nonWhitespaceCount = feedback.replace(/\s/g, "").length;
+    if (nonWhitespaceCount > 200) {
+      showAlert("error", "Feedback exceeds 200 non-whitespace characters.");
+      return;
+    }
+    if (!rating) {
+      showAlert("error", "Rating is required.");
+      return;
+    }
+    try {
+      await axios.post(
+        "http://localhost:5000/api/feedback/submit",
+        { rating, feedback },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      showAlert("success", "Thank you for your feedback!");
+      setRating(0);
+      setFeedback("");
+      setCharCount(0);
+    } catch (err) {
+      showAlert("error", err.response?.data?.message || "Failed to submit feedback.");
+    }
+  };
+
   // Download invoice as PDF
   const handleDownloadInvoice = (subscription) => {
     try {
       const doc = new jsPDF();
-      
-      // Set document properties
       doc.setFontSize(18);
-      doc.text("Invoice", 105, 20, { align: "center" });
+      doc.text("Subscription Invoice", 105, 40, { align: "center" });
       doc.setFontSize(12);
-      doc.text("Seller Sense", 20, 40);
-      doc.text("Email: support@sellersense.com", 20, 48);
-      doc.text(`Date: ${new Date().toLocaleDateString()}`, 20, 56);
+      doc.addImage(logo, "PNG", 20, 10, 20, 20);
+      doc.text("Seller Sense", 20, 55);
+      doc.text("Email: sellersense.services@gmail.com", 20, 63);
+      doc.text(`Date: ${new Date().toLocaleDateString()}`, 20, 71);
 
       // Billed To
       doc.setFontSize(14);
-      doc.text("Billed To:", 20, 80);
+      doc.text("Billed To:", 20, 95);
       doc.setFontSize(12);
-      doc.text(user.name, 20, 90);
-      doc.text(user.email, 20, 98);
+      doc.text(user.name, 20, 105);
+      doc.text(user.email, 20, 113);
 
       // Table Header
       doc.setFontSize(12);
-      doc.setFillColor(43, 108, 176); // Blue header background
-      doc.rect(20, 120, 170, 10, "F");
-      doc.setTextColor(255, 255, 255); // White text
-      doc.text("Description", 25, 127);
-      doc.text("Details", 100, 127);
-      doc.setTextColor(0, 0, 0); // Reset to black
+      doc.setFillColor(43, 108, 176);
+      doc.rect(20, 135, 170, 10, "F");
+      doc.setTextColor(255, 255, 255);
+      doc.text("Description", 25, 142);
+      doc.text("Details", 100, 142);
+      doc.setTextColor(0, 0, 0);
 
       // Table Content
       const planNameMap = {
@@ -142,14 +213,14 @@ const handleFeedbackSubmit = async () => {
       };
       const tableData = [
         ["Plan", planNameMap[subscription.plan] || subscription.plan],
-        ["Amount", `₹${subscription.amount}`],
+        ["Amount", `${subscription.amount} rs`],
         ["Payment ID", subscription.paymentId],
         ["Order ID", subscription.orderId],
         ["Start Date", new Date(subscription.startDate).toLocaleDateString()],
         ["End Date", new Date(subscription.endDate).toLocaleDateString()],
       ];
 
-      let y = 135;
+      let y = 150;
       tableData.forEach(([desc, detail]) => {
         doc.text(desc, 25, y);
         doc.text(detail, 100, y);
@@ -158,11 +229,11 @@ const handleFeedbackSubmit = async () => {
 
       // Draw table lines
       doc.setDrawColor(0);
-      doc.rect(20, 130, 170, y - 125); // Outer table border
+      doc.rect(20, 145, 170, y - 140);
       for (let i = 0; i < tableData.length; i++) {
-        doc.line(20, 130 + i * 10, 190, 130 + i * 10); // Horizontal lines
+        doc.line(20, 145 + i * 10, 190, 145 + i * 10);
       }
-      doc.line(95, 120, 95, y - 5); // Vertical divider
+      doc.line(95, 135, 95, y - 5);
 
       // Footer
       doc.text("Thank you for your subscription!", 20, y + 20);
@@ -176,10 +247,6 @@ const handleFeedbackSubmit = async () => {
       showAlert("error", "Failed to download invoice.");
     }
   };
-
-  // const toggleRecoveryCodeVisibility = () => {
-  //   setShowRecoveryCode(!showRecoveryCode);
-  // };
 
   return (
     <DashboardLayout>
@@ -214,62 +281,101 @@ const handleFeedbackSubmit = async () => {
               Change Password
             </Typography>
             <Box className="settings-password-form">
-              <TextField
-                label="Current Password"
-                name="currentPassword"
-                type="password"
-                value={passwordData.currentPassword}
-                onChange={handlePasswordChange}
-                fullWidth
-                margin="normal"
-              />
-              <TextField
-                label="New Password"
-                name="newPassword"
-                type="password"
-                value={passwordData.newPassword}
-                onChange={handlePasswordChange}
-                fullWidth
-                margin="normal"
-              />
-              <TextField
-                label="Confirm New Password"
-                name="confirmPassword"
-                type="password"
-                value={passwordData.confirmPassword}
-                onChange={handlePasswordChange}
-                fullWidth
-                margin="normal"
-              />
-              <Button
-                variant="contained"
-                color="primary"
-                onClick={handleChangePassword}
-                sx={{ mt: 2 }}
-                style={{maxWidth: '200px'}}
-
-              >
-                Change Password
-              </Button>
+              {showForgotPassword ? (
+                <>
+                  <TextField
+                    label="Secret Code"
+                    value={secretCode}
+                    onChange={handleSecretCodeChange}
+                    placeholder="Enter your recovery code (e.g., 9X7F-A23K-TY88)"
+                    fullWidth
+                    margin="normal"
+                  />
+                  <TextField
+                    label="New Password"
+                    name="newPassword"
+                    type="password"
+                    value={forgotPasswordData.newPassword}
+                    onChange={handleForgotPasswordChange}
+                    fullWidth
+                    margin="normal"
+                  />
+                  <TextField
+                    label="Confirm New Password"
+                    name="confirmPassword"
+                    type="password"
+                    value={forgotPasswordData.confirmPassword}
+                    onChange={handleForgotPasswordChange}
+                    fullWidth
+                    margin="normal"
+                  />
+                  <Button
+                    variant="contained"
+                    color="primary"
+                    onClick={handleForgotPasswordSubmit}
+                    sx={{ mt: 2 }}
+                    style={{ maxWidth: "200px" }}
+                  >
+                    Reset Password
+                  </Button>
+                  <Typography
+                    variant="body2"
+                    color="primary"
+                    sx={{ mt: 1, cursor: "pointer" }}
+                    onClick={() => setShowForgotPassword(false)}
+                  >
+                    Back to Change Password
+                  </Typography>
+                </>
+              ) : (
+                <>
+                  <TextField
+                    label="Current Password"
+                    name="currentPassword"
+                    type="password"
+                    value={passwordData.currentPassword}
+                    onChange={handlePasswordChange}
+                    fullWidth
+                    margin="normal"
+                  />
+                  <Typography
+                    variant="body2"
+                    color="primary"
+                    sx={{ mt: 1, cursor: "pointer" }}
+                    onClick={() => setShowForgotPassword(true)}
+                  >
+                    Forgot Current Password?
+                  </Typography>
+                  <TextField
+                    label="New Password"
+                    name="newPassword"
+                    type="password"
+                    value={passwordData.newPassword}
+                    onChange={handlePasswordChange}
+                    fullWidth
+                    margin="normal"
+                  />
+                  <TextField
+                    label="Confirm New Password"
+                    name="confirmPassword"
+                    type="password"
+                    value={passwordData.confirmPassword}
+                    onChange={handlePasswordChange}
+                    fullWidth
+                    margin="normal"
+                  />
+                  <Button
+                    variant="contained"
+                    color="primary"
+                    onClick={handleChangePassword}
+                    sx={{ mt: 2 }}
+                    style={{ maxWidth: "200px" }}
+                  >
+                    Change Password
+                  </Button>
+                </>
+              )}
             </Box>
-            {/* <Typography variant="subtitle1" gutterBottom sx={{ mt: 2 }}>
-              Recovery Code
-            </Typography>
-            <Box display="flex" alignItems="center">
-              <TextField
-                label="Recovery Code"
-                value={showRecoveryCode ? recoveryCode : "••••••••••"}
-                fullWidth
-                margin="normal"
-                InputProps={{ readOnly: true }}
-              />
-              <IconButton onClick={toggleRecoveryCodeVisibility}>
-                {showRecoveryCode ? <FaEyeSlash /> : <FaEye />}
-              </IconButton>
-            </Box>
-            <Typography variant="caption" color="textSecondary">
-              This code can reset your password once if you lose access. Keep it safe.
-            </Typography> */}
           </Paper>
 
           {/* Subscription & Billing */}
@@ -321,7 +427,7 @@ const handleFeedbackSubmit = async () => {
                             <Button
                               variant="contained"
                               size="small"
-                              style={{ gap: '5px' }}
+                              style={{ gap: "5px" }}
                               className="download-invoice-button"
                               onClick={() => handleDownloadInvoice(record)}
                             >
@@ -340,42 +446,52 @@ const handleFeedbackSubmit = async () => {
           </Paper>
         </div>
 
-       {/* Feedback */}
-  <Paper className="settings-section settings-card-full" style={{ "--card-index": 2 }}>
-    <Typography variant="h6" gutterBottom>
-      Feedback
-    </Typography>
-    <Box className="feedback-container">
-      <Typography variant="body1">Rate your experience:</Typography>
-      <Box className="feedback-stars">
-        {[1, 2, 3, 4, 5].map((star) => (
-          <span
-            key={star}
-            className={`feedback-star ${rating >= star ? "selected" : ""}`}
-            onClick={() => setRating(star)}
-          >
-            {rating >= star ? <FaStar /> : <FaRegStar />}
-          </span>
-        ))}
-      </Box>
-      <textarea
-        className="feedback-textarea"
-        placeholder="Share your feedback (optional)"
-        value={feedback}
-        onChange={(e) => setFeedback(e.target.value)}
-      />
-      <Button
-        variant="contained"
-        color="primary"
-        onClick={handleFeedbackSubmit}
-        disabled={!rating}
-        style={{maxWidth: '200px'}}
-      >
-        Submit Feedback
-      </Button>
-    </Box>
-  </Paper>
- 
+        {/* Feedback */}
+        <Paper className="settings-section settings-card-full" style={{ "--card-index": 2 }}>
+          <Typography variant="h6" gutterBottom>
+            Feedback
+          </Typography>
+          <Box className="feedback-container">
+            <Typography variant="body1">Rate your experience:</Typography>
+            <Box className="feedback-stars">
+              {[1, 2, 3, 4, 5].map((star) => (
+                <span
+                  key={star}
+                  className={`feedback-star ${rating >= star ? "selected" : ""}`}
+                  onClick={() => setRating(star)}
+                >
+                  {rating >= star ? <FaStar /> : <FaRegStar />}
+                </span>
+              ))}
+            </Box>
+            <textarea
+              className="feedback-textarea"
+              placeholder="Share your feedback (optional)"
+              value={feedback}
+              onChange={handleFeedbackChange}
+            />
+            <Box sx={{ display: "flex", alignItems: "center", gap: 2, mt: 1 }}>
+              <Typography variant="caption" color={charCount >= 200 ? "error" : "textSecondary"}>
+                {charCount}/200
+              </Typography>
+              {charCount >= 200 && (
+                <Alert severity="warning" sx={{ backgroundColor: "#fff3cd", color: "#856404", py: 0.5 }}>
+                  Feedback has reached the 200-character limit (excluding whitespace).
+                </Alert>
+              )}
+            </Box>
+            <Button
+              variant="contained"
+              color="primary"
+              onClick={handleFeedbackSubmit}
+              disabled={!rating}
+              style={{ maxWidth: "200px", mt: 2 }}
+            >
+              Submit Feedback
+            </Button>
+          </Box>
+        </Paper>
+
         {/* Data & Privacy */}
         <Paper className="settings-section settings-card-full" style={{ "--card-index": 3 }}>
           <Typography variant="h6" gutterBottom>
@@ -392,6 +508,25 @@ const handleFeedbackSubmit = async () => {
             </a>
           </Typography>
         </Paper>
+
+        {/* Recovery Code Modal */}
+        <Dialog open={openRecoveryModal} onClose={handleModalClose}>
+          <DialogTitle>Save Your New Recovery Code</DialogTitle>
+          <DialogContent>
+            <DialogContentText>
+              Save this code in a safe place. It can reset your password once if you lose access to your account.
+            </DialogContentText>
+            <Typography variant="h6" align="center" sx={{ my: 2 }}>
+              {newRecoveryCode}
+            </Typography>
+            <Button variant="contained" onClick={handleCopyCode} fullWidth>
+              Copy Code
+            </Button>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={handleModalClose}>Confirm</Button>
+          </DialogActions>
+        </Dialog>
       </div>
     </DashboardLayout>
   );

@@ -111,7 +111,7 @@ const DashboardStats = ({ dashboardData }) => {
   return (
     <Box sx={{ mb: 4 }}>
       <Grid container spacing={3}>
-        <Grid item xs={12} md={6}>
+        <Grid className="four-box-parent" item xs={12} md={6}>
           <Card sx={{ p: 2, boxShadow: 3, borderRadius: 3 }}>
             <CardContent>
               <div className="counters-grid">
@@ -179,8 +179,8 @@ const DashboardStats = ({ dashboardData }) => {
         </Grid>
 
         {/* Plan Distribution (Right) */}
-        <Grid item xs={12} md={6}>
-          <Card className="plan-distribution-card" sx={{ p: 3, boxShadow: 3, borderRadius: 3,width:'420px' }}>
+        <Grid item xs={12} md={6} className="plan-distribution-grid">
+          <Card className="plan-distribution-card" sx={{ p: 3, boxShadow: 3, borderRadius: 3,width:"420px" }}>
             <CardContent>
               <Typography variant="h6" gutterBottom>
                 Plan Distribution

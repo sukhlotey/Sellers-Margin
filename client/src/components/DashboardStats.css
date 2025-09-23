@@ -17,14 +17,17 @@
   height: 100%;
   border: 2px solid #e0e0e0; /* Distinct border for new design */
 }
+
 .rating-dis {
  width: 100%;
 }
 
-@media (max-width: 768px) {
+@media (max-width: 1199px) {
   .plan-distribution-card {
-  width: 100%;
-  background-color: brown;
+  width: 100% !important;
+}
+  .plan-distribution-grid,.four-box-parent {
+ width: 100%;
 }
 }
 

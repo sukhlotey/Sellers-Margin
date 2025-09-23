@@ -1,17 +1,16 @@
 import { useState, useEffect, useContext } from "react";
-import { useNavigate } from "react-router-dom";
 import { AuthContext } from "../context/AuthContext";
 import { useAlert } from "../context/AlertContext";
 import { getDashboardData } from "../api/authApi";
-import AdminDashboardLayout from "../layout/AdminDashboardLAyout";
+import AdminDashboardLayout from "../layout/AdminDashboardLayout";
 import Masonry from "react-masonry-css";
 import { FaStar, FaRegStar } from "react-icons/fa";
 import "./pagesUI/AdminRatings.css";
+import Loading from "../components/Loading";
 
 const AdminRatings = () => {
   const { adminToken } = useContext(AuthContext);
   const { showAlert } = useAlert();
-  const navigate = useNavigate();
   const [feedbacks, setFeedbacks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [expanded, setExpanded] = useState(null); // Track which card is expanded
@@ -104,7 +103,7 @@ const AdminRatings = () => {
           </div>
         </div>
         {loading ? (
-          <p>Loading...</p>
+          <Loading />
         ) : filteredFeedbacks.length > 0 ? (
           <Masonry
             breakpointCols={breakpointColumnsObj}
