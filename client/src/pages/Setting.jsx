@@ -35,6 +35,7 @@ const Setting = () => {
   });
   const [newRecoveryCode, setNewRecoveryCode] = useState("");
   const [openRecoveryModal, setOpenRecoveryModal] = useState(false);
+  const [deleteDialog, setDeleteDialog] = useState({ open: false });
 
   // Fetch billing history
   useEffect(() => {
@@ -248,6 +249,29 @@ const Setting = () => {
     }
   };
 
+  const handleDeleteAccount = () => {
+    setDeleteDialog({ open: true });
+  };
+
+  // Confirm account deletion
+  const confirmDeleteAccount = async () => {
+    try {
+      await axios.delete("http://localhost:5000/api/auth/delete-account", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      showAlert("success", "Account deleted successfully!");
+      navigate("/register") // Log out user after deletion
+    } catch (err) {
+      showAlert("error", err.response?.data?.message || "Failed to delete account.");
+    } finally {
+      setDeleteDialog({ open: false });
+    }
+  };
+
+  const handleCloseDeleteDialog = () => {
+    setDeleteDialog({ open: false });
+  };
+
   return (
     <DashboardLayout>
       <div className="settings-container">
@@ -256,7 +280,6 @@ const Setting = () => {
         </Typography>
 
         <div className="settings-top-row">
-          {/* Account Settings */}
           <Paper className="settings-section settings-card" style={{ "--card-index": 0 }}>
             <Typography variant="h6" gutterBottom>
               Account Settings
@@ -507,6 +530,35 @@ const Setting = () => {
               Terms of Service
             </a>
           </Typography>
+           <Button
+    variant="contained"
+    color="error"
+    onClick={handleDeleteAccount}
+    sx={{ mt: 2, maxWidth: "200px" }}
+  >
+    Delete Account
+  </Button>
+  <Dialog
+    open={deleteDialog.open}
+    onClose={handleCloseDeleteDialog}
+    aria-labelledby="delete-account-dialog-title"
+    aria-describedby="delete-account-dialog-description"
+  >
+    <DialogTitle id="delete-account-dialog-title">Delete Account</DialogTitle>
+    <DialogContent>
+      <DialogContentText id="delete-account-dialog-description">
+        Are you sure you want to delete your account? This action cannot be undone.
+      </DialogContentText>
+    </DialogContent>
+    <DialogActions>
+      <Button onClick={handleCloseDeleteDialog} color="primary">
+        Cancel
+      </Button>
+      <Button onClick={confirmDeleteAccount} color="error" autoFocus>
+        Delete
+      </Button>
+    </DialogActions>
+  </Dialog>
         </Paper>
 
         {/* Recovery Code Modal */}

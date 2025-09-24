@@ -86,13 +86,14 @@ const ProfitFeeCalculator = () => {
                   <ProfitFeeForm />
                 </div>
                 <div className="history-column">
-                  <button
+                  {/* <button
                     className="btn btn-secondary mb-2"
                     onClick={() => setShowHistory((prev) => !prev)}
                   >
                     {showHistory ? <MdPlaylistRemove size={25}/> : <MdPlaylistAddCheck size={25} />} History
                   </button>
-                  {showHistory && <ProfitFeeHistory />}
+                  {showHistory && <ProfitFeeHistory />} */}
+                  <ProfitFeeHistory />
                 </div>
               </>
             ) : (

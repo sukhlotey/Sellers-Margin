@@ -4,7 +4,6 @@ import { AuthContext } from "../../context/AuthContext";
 import { SubscriptionContext } from "../../context/SubscriptionContext";
 import { useAlert } from "../../context/AlertContext";
 import axios from "axios";
-import { Snackbar, Alert } from "@mui/material";
 import Loading from "../../components/Loading";
 
 const PaymentPage = () => {
@@ -68,24 +67,30 @@ const PaymentPage = () => {
         email: paymentData.user?.email || "",
       },
       theme: { color: "#3399cc" },
-      modal: {
-        ondismiss: () => {
-          console.log("Razorpay modal dismissed");
-          navigate("/subscription");
-        },
-      },
     };
 
     const rzp = new window.Razorpay(options);
     rzp.on("payment.failed", function (response) {
-      console.error("Payment failed:", response.error);
+      console.error("Payment failed event:", response.error);
+      // Ignore SVG rendering and preferences API errors
+      if (
+        response.error.code === "BAD_REQUEST_ERROR" &&
+        (response.error.description.includes("svg") ||
+         response.error.description.includes("width") ||
+         response.error.description.includes("height") ||
+         response.error.description.includes("Invalid request payload"))
+      ) {
+        console.log("Ignoring non-critical error (SVG or preferences); checking backend verification");
+        // Rely on handler for success confirmation
+        return;
+      }
       showAlert("error", `Payment failed: ${response.error.description}`);
       navigate("/subscription");
     });
     rzp.open();
   }, [paymentData, navigate, token, setSubscription, showAlert]);
 
-  return <><Loading/></>;
+  return <Loading />;
 };
 
 export default PaymentPage;

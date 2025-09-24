@@ -91,7 +91,7 @@ const GstSettlementPage = () => {
                   <GstDownload />
                 </div>
                 <div className="history-column">
-                  <button
+                  {/* <button
                     className="btn btn-secondary mb-2"
                     onClick={() => setShowHistory((prev) => !prev)}
                   >
@@ -101,7 +101,7 @@ const GstSettlementPage = () => {
                       <MdPlaylistAddCheck size={25} />
                     )}{" "}
                     History
-                  </button>
+                  </button> */}
                   {showHistory && <GstHistory />}
                 </div>
               </>

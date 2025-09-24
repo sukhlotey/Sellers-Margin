@@ -1,7 +1,7 @@
 .gst-container {
   max-width: 1200px;
   margin: 0 auto;
-  padding: 20px;
+  padding: 10px;
   font-family: 'Arial', sans-serif;
   max-height: 700px;
   overflow-y: auto;
@@ -229,10 +229,9 @@
     font-size: 0.9rem;
   }
 
-  .gst-list li {
-    flex-direction: column;
+  /* .gst-list li {
     align-items: flex-start;
-  }
+  } */
 
   .gst-preview-table-container {
     max-width: 100%;

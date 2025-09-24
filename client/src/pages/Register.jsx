@@ -2,10 +2,10 @@ import { useState, useContext } from "react";
 import { AuthContext } from "../context/AuthContext";
 import { useNavigate, Link } from "react-router-dom";
 import Logo from "../components/Logo";
-import { IoEyeOutline, IoEyeOffOutline } from "react-icons/io5";
+import { IoEyeOutline, IoEyeOffOutline, IoCheckmarkCircleOutline, IoCloseCircleOutline } from "react-icons/io5";
 import { useAlert } from "../context/AlertContext";
 import "./pagesUI/Auth.css";
-import { Button, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions, Typography, TextField, Box, InputAdornment, IconButton } from "@mui/material";
+import { Button, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions, Typography, TextField, Box, InputAdornment, IconButton, Alert } from "@mui/material";
 
 const Register = () => {
   const { register } = useContext(AuthContext);
@@ -16,9 +16,27 @@ const Register = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [openRecoveryModal, setOpenRecoveryModal] = useState(false);
   const [recoveryCode, setRecoveryCode] = useState("");
+  const [nameError, setNameError] = useState(false);
+  const [passwordLengthValid, setPasswordLengthValid] = useState(false);
+  const [passwordSymbolValid, setPasswordSymbolValid] = useState(false);
 
-  const handleChange = (e) =>
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+
+    if (name === "name" && value.length > 20) {
+      setNameError(true);
+      return; // Prevent typing more than 20 characters
+    } else {
+      setNameError(false);
+    }
+
+    if (name === "password") {
+      setPasswordLengthValid(value.length >= 8);
+      setPasswordSymbolValid(/[!@#$%^&*]/.test(value));
+    }
+
+    setFormData({ ...formData, [name]: value });
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -30,7 +48,7 @@ const Register = () => {
       setOpenRecoveryModal(true);
     } catch (err) {
       console.error("Registration error:", err);
-      showAlert(err.response?.data?.message || "Registration failed. Please try again.");
+      showAlert("error", err.response?.data?.message || "Registration failed. Please try again.");
       setIsLoading(false);
     }
   };
@@ -48,6 +66,15 @@ const Register = () => {
     setOpenRecoveryModal(false);
     setIsLoading(false);
     navigate("/dashboard", { replace: true });
+  };
+
+  const isFormValid = () => {
+    return (
+      formData.name.length <= 20 &&
+      formData.email &&
+      passwordLengthValid &&
+      passwordSymbolValid
+    );
   };
 
   return (
@@ -71,7 +98,13 @@ const Register = () => {
               placeholder="Enter your full name"
               fullWidth
               required
+              error={nameError}
             />
+            {nameError && (
+              <Alert severity="error" sx={{ mt: 1 }}>
+                Name cannot exceed 20 characters
+              </Alert>
+            )}
           </Box>
           
           <Box className="form-group">
@@ -107,13 +140,31 @@ const Register = () => {
                 ),
               }}
             />
+            <Box sx={{ mt: 1 }}>
+              <Typography
+                variant="caption"
+                color={passwordLengthValid ? "success.main" : "textSecondary"}
+                sx={{ display: "flex", alignItems: "center" }}
+              >
+                {passwordLengthValid ? <IoCheckmarkCircleOutline style={{ marginRight: 8 }} /> : <IoCloseCircleOutline style={{ marginRight: 8 }} />}
+                Minimum 8 characters
+              </Typography>
+              <Typography
+                variant="caption"
+                color={passwordSymbolValid ? "success.main" : "textSecondary"}
+                sx={{ display: "flex", alignItems: "center" }}
+              >
+                {passwordSymbolValid ? <IoCheckmarkCircleOutline style={{ marginRight: 8 }} /> : <IoCloseCircleOutline style={{ marginRight: 8 }} />}
+                Include special symbol
+              </Typography>
+            </Box>
           </Box>
           
           <Button
             type="submit"
             variant="contained"
             color="primary"
-            disabled={isLoading}
+            disabled={isLoading || !isFormValid()}
             fullWidth
           >
             {isLoading ? <div className="spinner"></div> : "Create Account"}

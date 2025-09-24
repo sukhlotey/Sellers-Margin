@@ -106,11 +106,8 @@ const GstHistory = () => {
   return (
     <div className="gst-container">
       <div className="gst-card">
-        <h3 className="gst-title">
-          <FaHistory /> Uploaded Reports History
-        </h3>
         {reports.length === 0 ? (
-          <p>No reports saved yet.</p>
+          <p style={{margin:0, paddingBottom:"10px"}}>No reports saved yet.</p>
         ) : (
           <ul className="gst-list">
             {reports.map((rep) => (

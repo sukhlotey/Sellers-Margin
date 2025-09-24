@@ -8,6 +8,7 @@ import { SubscriptionContext } from "../context/SubscriptionContext";
 import { getPlans } from "../api/subscriptionApi";
 import axios from "axios";
 import { FiUpload } from "react-icons/fi";
+import { FaFileUpload } from "react-icons/fa";
 import { Alert, Snackbar, Modal, Box, Typography, Button, IconButton } from "@mui/material";
 import { IoSaveOutline } from "react-icons/io5";
 import { RiCloseFill } from "react-icons/ri";
@@ -423,7 +424,14 @@ const BulkUploadModal = () => {
 
   return (
     <div className="profit-fee-card">
-      <h5>Bulk Upload Products</h5>
+      <h4
+      style={{
+        fontWeight: "700",
+        color: "#1a3c87",
+        display: "flex",        alignItems: "center",
+        gap: "10px",
+      }}
+      className="bulk-title"> <FaFileUpload /> Bulk Upload Products</h4>
       <p>
         Upload a <b>CSV or Excel (.xlsx)</b> file with columns for Product Name, Selling Price, and Cost Price (column names can vary; map them below).
       </p>
@@ -460,7 +468,7 @@ const BulkUploadModal = () => {
         disabled={!file}
         style={{ marginTop: "1rem" }}
       >
-        Upload & Preview
+       <FaFileUpload />  Upload & Preview
       </button>
 
       {columnHeaders.length > 0 && (

@@ -222,3 +222,17 @@ export const resetPassword = async (req, res) => {
     res.status(500).json({ message: "Server error", error: error.message });
   }
 };
+
+export const deleteUserAccount = async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+    await User.deleteOne({ _id: req.user.id });
+    res.json({ message: "Account deleted successfully" });
+  } catch (error) {
+    console.error("deleteUserAccount error:", error);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};

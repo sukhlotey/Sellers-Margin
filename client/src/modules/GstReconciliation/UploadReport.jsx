@@ -5,6 +5,7 @@ import { SubscriptionContext } from "../../context/SubscriptionContext";
 import { uploadSettlement } from "../../api/gstApi";
 import * as XLSX from "xlsx";
 import { saveAs } from "file-saver";
+import { FiUpload } from "react-icons/fi";
 import { FaFileUpload, FaDownload, FaSave } from "react-icons/fa";
 import { VscOpenPreview } from "react-icons/vsc";
 import { useAlert } from "../../context/AlertContext";
@@ -183,7 +184,7 @@ const UploadReport = () => {
         </h3>
         <div className="gst-preview-section">
           <p>
-            Upload a CSV or Excel and will mapped to file with columns: Order ID, Product Name, Selling Price, Cost Price, Marketplace Fees, GST on Sales, GST on Fees, Net Settlement Amount, Settlement Date, Quantity.{" "}
+            Upload a <b>CSV or Excel (.xlsx)</b> and will mapped to file with columns: Order ID, Product Name, Selling Price, Cost Price, Marketplace Fees, GST on Sales, GST on Fees, Net Settlement Amount, Settlement Date, Quantity.{" "}
             <a
               className="gst-preview-toggle"
               style={{ cursor: "pointer" }}
@@ -222,7 +223,18 @@ const UploadReport = () => {
           <option value="amazon">Amazon</option>
           <option value="flipkart">Flipkart</option>
         </select>
-        <div className="gst-file-input-container">
+        <div className="gst-file-input-container"
+        style={{
+          border: "2px dashed #cbd5e1",
+          borderRadius: "8px",
+          padding: "2rem",
+          textAlign: "center",
+          background: "#f1f5f9",
+          cursor: "pointer",
+          transition: "border-color 0.3s ease, background-color 0.3s ease",
+        }}
+        onClick={() => fileInputRef.current.click()}
+        >
           <input
             type="file"
             accept=".csv,.xlsx"
@@ -230,10 +242,12 @@ const UploadReport = () => {
             id="file-upload"
             ref={fileInputRef}
             onChange={handleFileChange}
+            style={{ display: "none" }}
           />
-          <label htmlFor="file-upload" className="gst-file-input-label">
-            <FaFileUpload size={30} /> {file ? file.name : "Choose a File"}
-          </label>
+          <FiUpload size={40} color="#3b82f6" />
+          <p style={{ margin: "0.5rem 0", fontWeight: "600" }}>
+           {file ? file.name : "Choose a File"}
+          </p>
         </div>
         <button className="gst-button" onClick={handleUpload}>
           <FaFileUpload /> Upload & Process

@@ -147,21 +147,31 @@ const BulkHistory = () => {
 
   return (
     <div className="bulk-history">
-      <div className="bulk-history-controls">
-        <h3>
-          <FaBoxes /> Bulk History
-        </h3>
-        <button
-          className="toggle-delete-btn"
-          onClick={handleToggleDelete}
-          disabled={loading}
-        >
-          <FiTrash2 />
-          {showCheckboxes ? `Delete Selected (${selectedBatches.length})` : "Select"}
-        </button>
-      </div>
+      {bulkHistory.length > 0 && (
+        <div className="bulk-history-controls">
+          <button
+            className="toggle-delete-btn"
+            onClick={handleToggleDelete}
+            disabled={loading}
+          >
+            <FiTrash2 />
+            {showCheckboxes ? `Delete Selected (${selectedBatches.length})` : "Select"}
+          </button>
+        </div>
+      )}
       {bulkHistory.length === 0 ? (
-        <p>No bulk uploads yet.</p>
+        <div
+          style={{
+            padding: "1.5rem",
+            background: "#f8fafc",
+            borderRadius: "8px",
+            boxShadow: "0 2px 6px rgba(0,0,0,0.1)",
+            transition: "transform 0.3s ease, box-shadow 0.3s ease",
+            animation: "fadeIn 0.5s ease-in-out",
+          }}
+        >
+          No bulk uploads yet.
+        </div>
       ) : (
         <div className="bulk-history-cards">
           {bulkHistory.map((batch) => (
