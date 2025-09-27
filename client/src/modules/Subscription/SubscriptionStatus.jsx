@@ -10,10 +10,10 @@ const SubscriptionStatus = () => {
 
   return (
     <div className="subscription-status">
-      <p>
+      <p style={{marginBottom:"0",marginTop:"5px"}} className="status-plan">
         Plan: <strong>{subscription.planName}</strong>
       </p>
-      <p>Expires on: {new Date(subscription.expiry).toLocaleDateString()}</p>
+      <p className="status-plan">Expires on: {new Date(subscription.expiry).toLocaleDateString()}</p>
     </div>
   );
 };

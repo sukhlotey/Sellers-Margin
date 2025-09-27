@@ -146,7 +146,9 @@
   font-size: 12px;
   color: #999;
 }
-
+.rating-card.deleted-user {
+  background-color: #ffe6e6; /* Light reddish background */
+}
 /* Responsive adjustments */
 @media (max-width: 600px) {
   .rating-card {
@@ -170,4 +172,13 @@
   .filter-group input[type="date"] {
     min-width: 100%;
   }
+}
+
+@media (max-width: 480px) {
+ .rating-card .email {
+  font-size: 12px;
+  color: #666;
+  margin: 0;
+  overflow-wrap: break-word;
+}
 }

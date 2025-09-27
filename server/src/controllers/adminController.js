@@ -68,23 +68,49 @@ export const getDashboardData = async (req, res) => {
     // User feedback
     const feedbacks = await Feedback.find()
       .populate("userId", "name email")
-      .select("rating feedback createdAt")
+      .select("userId name email rating feedback createdAt")
       .sort({ createdAt: -1 });
 
-    // Upcoming expirations (within 7 days)
-    const upcomingExpirations = await Subscription.find({
-      endDate: { $lte: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) },
-    })
-      .populate("userId", "name email")
-      .select("plan endDate")
-      .sort({ endDate: 1 });
+    // Log raw feedback data before formatting
+    console.log("Raw feedbacks from database in getDashboardData:", JSON.stringify(feedbacks.map(fb => ({
+      _id: fb._id.toString(),
+      userId: fb.userId ? { _id: fb.userId._id.toString(), name: fb.userId.name, email: fb.userId.email } : null,
+      name: fb.name,
+      email: fb.email,
+      rating: fb.rating,
+      feedback: fb.feedback,
+      createdAt: fb.createdAt
+    }), null, 2)));
+
+    // Format feedbacks to prioritize stored name and email
+    const formattedFeedbacks = feedbacks.map((fb) => {
+      const feedbackData = {
+        _id: fb._id,
+        userId: fb.userId ? { _id: fb.userId._id, name: fb.userId.name, email: fb.userId.email } : null,
+        name: fb.name || fb.userId?.name || "N/A",
+        email: fb.email || fb.userId?.email || "N/A",
+        rating: fb.rating,
+        feedback: fb.feedback,
+        createdAt: fb.createdAt,
+      };
+      console.log("Formatted feedback for response:", JSON.stringify(feedbackData, null, 2));
+      return feedbackData;
+    });
+
+    // Log final response data
+    console.log("Final dashboard response (feedbacks only):", JSON.stringify(formattedFeedbacks, null, 2));
 
     res.json({
       totalUsers,
       activeUsers,
       subscriptions,
-      feedbacks,
-      upcomingExpirations,
+      feedbacks: formattedFeedbacks,
+      upcomingExpirations: await Subscription.find({
+        endDate: { $lte: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) },
+      })
+        .populate("userId", "name email")
+        .select("plan endDate")
+        .sort({ endDate: 1 }),
     });
   } catch (error) {
     console.error("getDashboardData error:", error);

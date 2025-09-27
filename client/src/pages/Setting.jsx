@@ -14,7 +14,7 @@ import { FaDownload, FaStar, FaRegStar } from "react-icons/fa";
 import logo from "../assets/sellersense1.png";
 
 const Setting = () => {
-  const { user, token } = useContext(AuthContext);
+  const { user, token,logout} = useContext(AuthContext);
   const { subscription } = useContext(SubscriptionContext);
   const { showAlert } = useAlert();
   const navigate = useNavigate();
@@ -50,10 +50,10 @@ const Setting = () => {
         showAlert("error", "Failed to load billing history.");
       }
     };
-    if (token) {
+    if (token && user) {
       fetchBillingHistory();
     }
-  }, [token, showAlert]);
+  }, [token,user,showAlert]);
 
   // Handle password change input
   const handlePasswordChange = (e) => {
@@ -260,7 +260,7 @@ const Setting = () => {
         headers: { Authorization: `Bearer ${token}` },
       });
       showAlert("success", "Account deleted successfully!");
-      navigate("/register") // Log out user after deletion
+      logout();
     } catch (err) {
       showAlert("error", err.response?.data?.message || "Failed to delete account.");
     } finally {

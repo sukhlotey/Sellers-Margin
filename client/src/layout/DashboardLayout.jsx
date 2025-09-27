@@ -1,25 +1,38 @@
-import { useState,useEffect } from "react";
+import { useState, useEffect } from "react";
 import Navbar from "../components/Navbar";
 import Sidebar from "../components/Sidebar";
-// import Footer from "../components/Footer";
 import "../components/componentsUI/components.css";
 
 const DashboardLayout = ({ children }) => {
-  const [sidebarOpen, setSidebarOpen] = useState(true); // open by default on desktop
-  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+  const [sidebarOpen, setSidebarOpen] = useState(window.innerWidth >= 1024); // Initialize based on 1024px breakpoint
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 1024); // Non-desktop is < 1024px
 
   const toggleSidebar = () => setSidebarOpen(!sidebarOpen);
 
-  // Watch window resize → detect mobile vs desktop
+  // Close sidebar when clicking outside in non-desktop views
+  const handleOverlayClick = () => {
+    if (isMobile && sidebarOpen) {
+      setSidebarOpen(false);
+    }
+  };
+
+  // Prevent sidebar clicks from closing it
+  const handleSidebarClick = (e) => {
+    e.stopPropagation();
+  };
+
+  // Watch window resize → detect desktop vs non-desktop
   useEffect(() => {
     const handleResize = () => {
-      setIsMobile(window.innerWidth < 768);
-      if (window.innerWidth < 768) {
-        setSidebarOpen(false); // auto close on mobile
+      const newIsMobile = window.innerWidth < 1024; // Changed to 1024px
+      setIsMobile(newIsMobile);
+      if (newIsMobile) {
+        setSidebarOpen(false); // Close sidebar in non-desktop views
       } else {
-        setSidebarOpen(true); // default open on desktop
+        setSidebarOpen(true); // Open sidebar in full desktop view
       }
     };
+    handleResize(); // Run on mount to set initial state correctly
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
   }, []);
@@ -28,12 +41,12 @@ const DashboardLayout = ({ children }) => {
     <div className={`dashboard-container ${sidebarOpen && !isMobile ? "sidebar-open" : ""}`}>
       <Navbar toggleSidebar={toggleSidebar} />
       <div className="main-layout">
-        <Sidebar isOpen={sidebarOpen} isMobile={isMobile} toggleSidebar={toggleSidebar} />
+        <Sidebar isOpen={sidebarOpen} isMobile={isMobile} toggleSidebar={toggleSidebar} onClick={handleSidebarClick} />
+        {isMobile && sidebarOpen && (
+          <div className="sidebar-overlay" onClick={handleOverlayClick}></div>
+        )}
         <main className="content-area">{children}</main>
       </div>
-
-
-      {/* <Footer /> */}
     </div>
   );
 };

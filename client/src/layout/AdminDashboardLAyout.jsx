@@ -1,36 +1,54 @@
 import { useState, useEffect } from "react";
 import AdminNavbar from "../components/AdminNavbar";
 import AdminSidebar from "../components/AdminSidebar";
-import "../components/componentsUI/components.css";
+import "../components/componentsUI/admin-components.css";
 
 const AdminDashboardLayout = ({ children }) => {
-    const [sidebarOpen, setSidebarOpen] = useState(true);
-    const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+  const [sidebarOpen, setSidebarOpen] = useState(window.innerWidth >= 1024); // Initialize based on 1024px breakpoint
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 1024); // Non-desktop is < 1024px
 
-    const toggleSidebar = () => setSidebarOpen(!sidebarOpen);
+  const toggleSidebar = () => setSidebarOpen(!sidebarOpen);
 
-    useEffect(() => {
-        const handleResize = () => {
-            setIsMobile(window.innerWidth < 768);
-            if (window.innerWidth < 768) {
-                setSidebarOpen(false);
-            } else {
-                setSidebarOpen(true);
-            }
-        };
-        window.addEventListener("resize", handleResize);
-        return () => window.removeEventListener("resize", handleResize);
-    }, []);
+  // Close sidebar when clicking outside in non-desktop views
+  const handleOverlayClick = () => {
+    if (isMobile && sidebarOpen) {
+      setSidebarOpen(false);
+    }
+  };
 
-    return (
-        <div className={`dashboard-container admin-dashboard-container ${sidebarOpen && !isMobile ? "sidebar-open" : ""}`}>
-            <AdminNavbar toggleSidebar={toggleSidebar} />
-            <div className="main-layout">
-                <AdminSidebar isOpen={sidebarOpen} isMobile={isMobile} toggleSidebar={toggleSidebar} />
-                <main className="content-area">{children}</main>
-            </div>
-        </div>
-    );
+  // Prevent sidebar clicks from closing it
+  const handleSidebarClick = (e) => {
+    e.stopPropagation();
+  };
+
+  // Watch window resize → detect desktop vs non-desktop
+  useEffect(() => {
+    const handleResize = () => {
+      const newIsMobile = window.innerWidth < 1024;
+      setIsMobile(newIsMobile);
+      if (newIsMobile) {
+        setSidebarOpen(false); // Close sidebar in non-desktop views
+      } else {
+        setSidebarOpen(true); // Open sidebar in full desktop view
+      }
+    };
+    handleResize(); // Run on mount to set initial state correctly
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  return (
+    <div className={`dashboard-container admin-dashboard-container ${sidebarOpen && !isMobile ? "sidebar-open" : ""}`}>
+      <AdminNavbar toggleSidebar={toggleSidebar} />
+      <div className="main-layout">
+        <AdminSidebar isOpen={sidebarOpen} isMobile={isMobile} toggleSidebar={toggleSidebar} onClick={handleSidebarClick} />
+        {isMobile && sidebarOpen && (
+          <div className="sidebar-overlay" onClick={handleOverlayClick}></div>
+        )}
+        <main className="content-area">{children}</main>
+      </div>
+    </div>
+  );
 };
 
 export default AdminDashboardLayout;

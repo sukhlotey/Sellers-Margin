@@ -92,8 +92,8 @@ Our modules are designed to make selling simpler, faster, and more profitable:
       <div className="dashboard-content">
         <div className="dashboard-header">
         <div className="user-info">
-          <h2 className="welcome-message">
-            Welcome <span className="username">{user.name}</span> <span className="emoji-wave"></span>
+          <h2 className="welcome-user">
+            Welcome <span className="username">{user.name}</span>
           </h2>
           <p className="user-email">{user.email}</p>
         </div>

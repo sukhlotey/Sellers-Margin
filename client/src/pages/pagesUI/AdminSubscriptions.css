@@ -1,0 +1,43 @@
+.subscriptions-container {
+  padding: 20px;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th, td {
+  padding: 12px;
+  text-align: left;
+}
+
+th {
+  color: black; /* No background, text color black */
+}
+
+tr:nth-child(even) {
+  background-color: #f9fafb;
+}
+
+.filters {
+  display: flex;
+  gap: 20px;
+  margin-bottom: 20px;
+}
+
+.filter-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.filter-group label {
+  margin-bottom: 5px;
+  font-weight: 500;
+}
+
+.filter-group select {
+  padding: 8px;
+  border-radius: 4px;
+  border: 1px solid #ccc;
+}

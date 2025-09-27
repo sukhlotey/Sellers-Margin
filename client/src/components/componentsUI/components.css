@@ -108,55 +108,19 @@ html {
   font-size: 1.6rem;
   cursor: pointer;
   display: block;
+  position: relative;
+  z-index: 1201; /* Above sidebar (1200) */
 }
 
-.nav-right .avatar {
-  background: var(--secondary);
-  color: var(--text-dark);
-  font-weight: 600;
-  border-radius: 50%;
-  padding: 0.5rem 0.9rem;
-  cursor: pointer;
-  transition: var(--transition);
-}
-
-.nav-right .avatar:hover {
-  background: #059669; /* Darker green on hover */
-}
-
-.dropdown {
-  position: absolute;
-  top: 48px;
-  right: 0;
-  background: var(--card-bg);
-  color: var(--text-dark);
-  padding: 1rem;
-  border-radius: 8px;
-  box-shadow: var(--shadow);
-  min-width: 200px;
-  border: 1px solid var(--card-border);
-}
-
-.dropdown p {
-  margin: 0.5rem 0;
-  font-size: 0.95rem;
-}
-
-.dropdown button {
-  background: #dc2626;
-  color: var(--text-light);
-  border: none;
-  padding: 0.6rem;
-  border-radius: 6px;
-  cursor: pointer;
-  margin-top: 0.8rem;
+/* Sidebar Overlay */
+.sidebar-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
   width: 100%;
-  font-weight: 500;
-  transition: var(--transition);
-}
-
-.dropdown button:hover {
-  background: #b91c1c;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5); /* Semi-transparent black */
+  z-index: 1199; /* Below sidebar (1200), above navbar (1100) */
 }
 
 /* Sidebar */
@@ -188,6 +152,7 @@ html {
   max-width: 280px;
   box-shadow: 2px 0 8px rgba(0, 0, 0, 0.15);
   background: var(--bg);
+  z-index: 1200; /* Above navbar (1100), below hamburger (1201) */
 }
 
 .sidebar.mobile.open {
@@ -400,7 +365,9 @@ html {
 .cancel-icon:hover {
   color: #dc2626;
 }
-
+.status-plan{
+  color: #6b7280;
+}
 /* Responsive Adjustments */
 @media (max-width: 1024px) {
   .content-area {
@@ -411,8 +378,9 @@ html {
     margin-left: 0;
   }
 
-  .cards {
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  .dashboard-container.sidebar-open .navbar {
+    margin-left: 0; /* Remove offset in non-desktop views */
+    width: 100%;
   }
 }
 
@@ -461,13 +429,21 @@ html {
 
 @media (max-width: 480px) {
   .dashboard-content .welcome-message {
-    font-size: 2rem;
+    font-size: 1rem;
+    text-align: justify;
+  }
+  .dashboard-content .welcome-user{
+    font-size: 1.9rem;
     text-align: center;
   }
+  .dashboard-content h2 {
+    font-size: 1rem;
+  }
  .dashboard-header  {
-display: flex;
-flex-direction: column;
-}
+    display: flex;
+    flex-direction: column;
+    padding: 1.5rem 2rem 1.5rem 2rem;
+  }
 
   .user-email {
     font-size: 0.875rem;

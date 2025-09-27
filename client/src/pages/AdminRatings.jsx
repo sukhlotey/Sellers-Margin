@@ -21,6 +21,7 @@ const AdminRatings = () => {
     const fetchData = async () => {
       try {
         const res = await getDashboardData(adminToken);
+        console.log("Received feedbacks in AdminRatings:", JSON.stringify(res.data.feedbacks, null, 2));
         setFeedbacks(res.data.feedbacks);
         setLoading(false);
       } catch (err) {
@@ -110,25 +111,28 @@ const AdminRatings = () => {
             className="masonry-grid"
             columnClassName="masonry-grid-column"
           >
-            {filteredFeedbacks.map((fb) => (
-              <div
-                key={fb._id}
-                className={`rating-card ${expanded === fb._id ? "expanded" : ""}`}
-                onClick={() => toggleFeedback(fb._id)}
-              >
-                <div className="rating-card-content">
-                  <h3>{fb.userId?.name || "N/A"}</h3>
-                  <p className="email">{fb.userId?.email || "N/A"}</p>
-                  <div className="stars">{renderStars(fb.rating)}</div>
-                  <div className={`feedback-message ${expanded === fb._id ? "show" : ""}`}>
-                    <p>{fb.feedback || "No feedback provided."}</p>
-                    <span className="date">
-                      {new Date(fb.createdAt).toLocaleDateString()}
-                    </span>
+            {filteredFeedbacks.map((fb) => {
+              console.log("Rendering feedback for card:", JSON.stringify({ id: fb._id, name: fb.name, email: fb.email, userId: fb.userId }, null, 2));
+              return (
+                <div
+                  key={fb._id}
+                  className={`rating-card ${expanded === fb._id ? "expanded" : ""} ${fb.userId === null ? "deleted-user" : ""}`}
+                  onClick={() => toggleFeedback(fb._id)}
+                >
+                  <div className="rating-card-content">
+                    <h3>{fb.name || fb.userId?.name || "N/A"}</h3>
+                    <p className="email">{fb.email || fb.userId?.email || "N/A"}</p>
+                    <div className="stars">{renderStars(fb.rating)}</div>
+                    <div className={`feedback-message ${expanded === fb._id ? "show" : ""}`}>
+                      <p>{fb.feedback || "No feedback provided."}</p>
+                      <span className="date">
+                        {new Date(fb.createdAt).toLocaleDateString()}
+                      </span>
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </Masonry>
         ) : (
           <p>No feedback matches the selected filters.</p>

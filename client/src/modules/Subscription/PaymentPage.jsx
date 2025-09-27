@@ -72,7 +72,7 @@ const PaymentPage = () => {
     const rzp = new window.Razorpay(options);
     rzp.on("payment.failed", function (response) {
       console.error("Payment failed event:", response.error);
-      // Ignore SVG rendering and preferences API errors
+      // Ignore non-critical errors (SVG, preferences, account validation, UPI)
       if (
         response.error.code === "BAD_REQUEST_ERROR" &&
         (response.error.description.includes("svg") ||
@@ -81,7 +81,20 @@ const PaymentPage = () => {
          response.error.description.includes("Invalid request payload"))
       ) {
         console.log("Ignoring non-critical error (SVG or preferences); checking backend verification");
-        // Rely on handler for success confirmation
+        return;
+      }
+      if (
+        response.error.code === "SERVER_ERROR" &&
+        response.error.description.includes("validate/account")
+      ) {
+        console.log("Ignoring account validation error; checking backend verification");
+        return;
+      }
+      if (
+        response.error.description.includes("gpay://upi/pay") ||
+        response.error.description.includes("scheme does not have a registered handler")
+      ) {
+        console.log("Ignoring UPI handler error; checking backend verification");
         return;
       }
       showAlert("error", `Payment failed: ${response.error.description}`);

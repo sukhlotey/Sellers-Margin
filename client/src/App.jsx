@@ -18,6 +18,8 @@ import ForgotPasswordPage from "./pages/ForgotPasswordPage";
 import AdminLogin from "./pages/AdminLogin";
 import AdminDashboard from "./pages/AdminDashboard";
 import AdminRatings from "./pages/AdminRatings";
+import AdminActiveUsers from "./pages/AdminActiveUsers";
+import AdminSubscriptions from "./pages/AdminSubscriptions";
 import PrivateAdminRoute from "./components/PrivateAdminRoute";
 const PrivateRoute = ({ children }) => {
   const { user, loading } = useContext(AuthContext);
@@ -92,6 +94,13 @@ function App() {
                   <Route path="/admin/ratings" element={<PrivateAdminRoute>
                     <AdminRatings />
                   </PrivateAdminRoute>} />
+                  <Route path="/admin/active-users" element={<PrivateAdminRoute>
+                    <AdminActiveUsers />
+                  </PrivateAdminRoute>} />
+                  <Route path="/admin/subscriptions" element={<PrivateAdminRoute>
+                    <AdminSubscriptions />
+                  </PrivateAdminRoute>} />
+                
                 </Routes>
               </Router>
             </AlertProvider>

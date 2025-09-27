@@ -30,6 +30,7 @@ const AdminDashboard = () => {
     const fetchData = async () => {
       try {
         const res = await getDashboardData(adminToken);
+        console.log("Received dashboard data (feedbacks):", JSON.stringify(res.data.feedbacks, null, 2));
         setDashboardData(res.data);
         setLoading(false);
       } catch (err) {
@@ -54,14 +55,13 @@ const AdminDashboard = () => {
   const handleDownloadReport = () => {
     try {
       const pdf = new jsPDF("p", "mm", "a4");
-      // Apply autoTable plugin to jsPDF instance
       autoTable(pdf, { html: null }); // Initialize autoTable
       const pageWidth = 190; // A4 width minus margins
       const margin = 10;
       let yOffset = 10;
 
       // Add Logo
-      pdf.addImage(logo, "PNG", margin, yOffset, 20, 20); // Logo: 40mm width, 20mm height
+      pdf.addImage(logo, "PNG", margin, yOffset, 20, 20);
       yOffset += 25;
 
       // Title
@@ -137,13 +137,16 @@ const AdminDashboard = () => {
       autoTable(pdf, {
         startY: yOffset,
         head: [["Name", "Email", "Rating", "Feedback", "Date"]],
-        body: dashboardData.feedbacks.map((fb) => [
-          fb.userId?.name || "N/A",
-          fb.userId?.email || "N/A",
-          fb.rating || "N/A",
-          fb.feedback || "N/A",
-          new Date(fb.createdAt).toLocaleDateString(),
-        ]),
+        body: dashboardData.feedbacks.map((fb) => {
+          console.log("Rendering feedback for PDF:", JSON.stringify({ id: fb._id, name: fb.name, email: fb.email, userId: fb.userId }, null, 2));
+          return [
+            fb.name || fb.userId?.name || "N/A",
+            fb.email || fb.userId?.email || "N/A",
+            fb.rating || "N/A",
+            fb.feedback || "N/A",
+            new Date(fb.createdAt).toLocaleDateString(),
+          ];
+        }),
         theme: "grid",
         headStyles: { fillColor: [37, 99, 235], textColor: [255, 255, 255] },
         columnStyles: {
@@ -174,9 +177,6 @@ const AdminDashboard = () => {
             Download Report
           </Button>
         </Box>
-        {/* <Typography variant="subtitle1" gutterBottom>
-          {admin?.name} ({admin?.email})
-        </Typography> */}
 
         {loading ? (
           <Typography><Loading/></Typography>
@@ -192,80 +192,106 @@ const AdminDashboard = () => {
             </Card>
 
             <Card sx={{ mb: 3, borderRadius: 3, boxShadow: 3 }}>
-  <CardContent>
-    <Typography variant="h6">Active Users (Last 30 Days)</Typography>
-    {dashboardData.activeUsers.length > 0 ? (
-      <Box sx={{ overflowX: "auto" }}>
-        <Table sx={{ minWidth: 650 }}>
-          <TableHead>
-            <TableRow>
-              <TableCell>Name</TableCell>
-              <TableCell>Email</TableCell>
-              <TableCell>Last Login</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {dashboardData.activeUsers.map((user) => (
-              <TableRow key={user._id}>
-                <TableCell>
-                  <span
-                    style={{
-                      display: "inline-block",
-                      width: "8px",
-                      height: "8px",
-                      backgroundColor: "green",
-                      borderRadius: "50%",
-                      marginRight: "8px",
-                      verticalAlign: "middle",
-                    }}
-                  ></span>
-                  {user.name}
-                </TableCell>
-                <TableCell>{user.email}</TableCell>
-                <TableCell>{new Date(user.lastLogin).toLocaleDateString()}</TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </Box>
-    ) : (
-      <Typography>No active users.</Typography>
-    )}
-  </CardContent>
-</Card>
+              <CardContent>
+                <Typography variant="h6">Active Users (Last 30 Days)</Typography>
+                {dashboardData.activeUsers.length > 0 ? (
+                  <>
+                    <Box sx={{ overflowX: "auto" }}>
+                      <Table sx={{ minWidth: 650 }}>
+                        <TableHead>
+                          <TableRow>
+                            <TableCell>Name</TableCell>
+                            <TableCell>Email</TableCell>
+                            <TableCell>Last Login</TableCell>
+                          </TableRow>
+                        </TableHead>
+                        <TableBody>
+                          {dashboardData.activeUsers.slice(0, 5).map((user) => (
+                            <TableRow key={user._id}>
+                              <TableCell>
+                                <span
+                                  style={{
+                                    display: "inline-block",
+                                    width: "8px",
+                                    height: "8px",
+                                    backgroundColor: "green",
+                                    borderRadius: "50%",
+                                    marginRight: "8px",
+                                    verticalAlign: "middle",
+                                  }}
+                                ></span>
+                                {user.name}
+                              </TableCell>
+                              <TableCell>{user.email}</TableCell>
+                              <TableCell>{new Date(user.lastLogin).toLocaleDateString()}</TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </Box>
+                    {dashboardData.activeUsers.length > 5 && (
+                      <Box sx={{ mt: 2, textAlign: "center" }}>
+                        <Button
+                          variant="contained"
+                          color="primary"
+                          onClick={() => navigate("/admin/active-users")}
+                        >
+                          View More
+                        </Button>
+                      </Box>
+                    )}
+                  </>
+                ) : (
+                  <Typography>No active users.</Typography>
+                )}
+              </CardContent>
+            </Card>
 
             <Card sx={{ mb: 3, borderRadius: 3, boxShadow: 3 }}>
               <CardContent>
                 <Typography variant="h6">User Subscriptions</Typography>
                 {dashboardData.subscriptions.length > 0 ? (
-                  <Box sx={{ overflowX: "auto" }}>
-                    <Table sx={{ minWidth: 800 }}>
-                      <TableHead>
-                        <TableRow>
-                          <TableCell>Name</TableCell>
-                          <TableCell>Email</TableCell>
-                          <TableCell>Plan</TableCell>
-                          <TableCell>Amount (₹)</TableCell>
-                          <TableCell>Start Date</TableCell>
-                          <TableCell>End Date</TableCell>
-                          <TableCell>Order ID</TableCell>
-                        </TableRow>
-                      </TableHead>
-                      <TableBody>
-                        {dashboardData.subscriptions.map((sub) => (
-                          <TableRow key={sub._id}>
-                            <TableCell>{sub.userId?.name || "N/A"}</TableCell>
-                            <TableCell>{sub.userId?.email || "N/A"}</TableCell>
-                            <TableCell>{sub.plan}</TableCell>
-                            <TableCell>{sub.amount}</TableCell>
-                            <TableCell>{new Date(sub.startDate).toLocaleDateString()}</TableCell>
-                            <TableCell>{new Date(sub.endDate).toLocaleDateString()}</TableCell>
-                            <TableCell>{sub.orderId}</TableCell>
+                  <>
+                    <Box sx={{ overflowX: "auto" }}>
+                      <Table sx={{ minWidth: 800 }}>
+                        <TableHead>
+                          <TableRow>
+                            <TableCell>Name</TableCell>
+                            <TableCell>Email</TableCell>
+                            <TableCell>Plan</TableCell>
+                            <TableCell>Amount (₹)</TableCell>
+                            <TableCell>Start Date</TableCell>
+                            <TableCell>End Date</TableCell>
+                            <TableCell>Order ID</TableCell>
                           </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  </Box>
+                        </TableHead>
+                        <TableBody>
+                          {dashboardData.subscriptions.slice(0, 5).map((sub) => (
+                            <TableRow key={sub._id}>
+                              <TableCell>{sub.userId?.name || "N/A"}</TableCell>
+                              <TableCell>{sub.userId?.email || "N/A"}</TableCell>
+                              <TableCell>{sub.plan}</TableCell>
+                              <TableCell>{sub.amount}</TableCell>
+                              <TableCell>{new Date(sub.startDate).toLocaleDateString()}</TableCell>
+                              <TableCell>{new Date(sub.endDate).toLocaleDateString()}</TableCell>
+                              <TableCell>{sub.orderId}</TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </Box>
+                    {dashboardData.subscriptions.length > 5 && (
+                      <Box sx={{ mt: 2, textAlign: "center" }}>
+                        <Button
+                          variant="contained"
+                          color="primary"
+                          onClick={() => navigate("/admin/subscriptions")}
+                        >
+                          View More
+                        </Button>
+                      </Box>
+                    )}
+                  </>
                 ) : (
                   <Typography>No subscriptions.</Typography>
                 )}
@@ -289,15 +315,18 @@ const AdminDashboard = () => {
                           </TableRow>
                         </TableHead>
                         <TableBody>
-                          {dashboardData.feedbacks.slice(0, 3).map((fb) => (
-                            <TableRow key={fb._id}>
-                              <TableCell>{fb.userId?.name || "N/A"}</TableCell>
-                              <TableCell>{fb.userId?.email || "N/A"}</TableCell>
-                              <TableCell>{renderStars(fb.rating)}</TableCell>
-                              <TableCell>{fb.feedback || "N/A"}</TableCell>
-                              <TableCell>{new Date(fb.createdAt).toLocaleDateString()}</TableCell>
-                            </TableRow>
-                          ))}
+                          {dashboardData.feedbacks.slice(0, 3).map((fb) => {
+                            console.log("Rendering feedback for table:", JSON.stringify({ id: fb._id, name: fb.name, email: fb.email, userId: fb.userId }, null, 2));
+                            return (
+                              <TableRow key={fb._id}>
+                                <TableCell>{fb.name || fb.userId?.name || "N/A"}</TableCell>
+                                <TableCell>{fb.email || fb.userId?.email || "N/A"}</TableCell>
+                                <TableCell>{renderStars(fb.rating)}</TableCell>
+                                <TableCell>{fb.feedback || "N/A"}</TableCell>
+                                <TableCell>{new Date(fb.createdAt).toLocaleDateString()}</TableCell>
+                              </TableRow>
+                            );
+                          })}
                         </TableBody>
                       </Table>
                     </Box>

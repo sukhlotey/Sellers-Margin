@@ -5,7 +5,7 @@ import { useNavigate } from "react-router-dom";
 import { IoIosLogOut } from "react-icons/io";
 
 const AdminNavbar = ({ toggleSidebar }) => {
-    const { admin, logout } = useContext(AuthContext);
+    const { admin, logoutAdmin } = useContext(AuthContext);
     const [dropdown, setDropdown] = useState(false);
     const navigate = useNavigate();
 
@@ -23,7 +23,7 @@ const AdminNavbar = ({ toggleSidebar }) => {
                                 <div className="dropdown">
                                     <p>{admin.name}</p>
                                     <p>{admin.email}</p>
-                                    <button onClick={logout}>Logout <IoIosLogOut size={20} /></button>
+                                    <button onClick={logoutAdmin}>Logout <IoIosLogOut size={20} /></button>
                                 </div>
                             )}
                         </div>

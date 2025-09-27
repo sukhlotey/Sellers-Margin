@@ -55,17 +55,22 @@ export const AuthProvider = ({ children }) => {
 
   const logout = () => {
     localStorage.removeItem("token");
+    setUser(null);
+    setToken(null);
+   
+  };
+
+  const logoutAdmin = () => {
     localStorage.removeItem("adminToken");
     localStorage.removeItem("adminName");
     localStorage.removeItem("adminEmail");
-    setUser(null);
-    setAdmin(null);
-    setToken(null);
-    setAdminToken(null);
-  };
+     setAdminToken(null);
+     setAdmin(null);
+
+  }
 
   return (
-    <AuthContext.Provider value={{ user, token, admin, adminToken, loading, register, login, adminLogin, logout }}>
+    <AuthContext.Provider value={{ user, token, admin, adminToken, loading, register, login, adminLogin, logout,logoutAdmin }}>
       {children}
     </AuthContext.Provider>
   );
