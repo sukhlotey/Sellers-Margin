@@ -1,5 +1,4 @@
 import mongoose from "mongoose";
-import { v4 as uuidv4 } from "uuid";
 
 const profitFeeSchema = new mongoose.Schema(
   {
@@ -7,22 +6,34 @@ const profitFeeSchema = new mongoose.Schema(
     productName: { type: String, required: true },
     sellingPrice: { type: Number, required: true },
     costPrice: { type: Number, required: true },
+    importDuties: { type: Number, required: true },
     commissionPercent: { type: Number, required: true },
     gstPercent: { type: Number, required: true },
     shippingCost: { type: Number, default: 0 },
     adCost: { type: Number, default: 0 },
     category: { type: String, default: "General" },
     weight: { type: Number, required: true },
-
-    commissionFee: Number,
-    gstTax: Number,
-    profit: Number,
-    breakEvenPrice: Number,
-
-    batchId: { type: String, default: null }, // same id for all rows in one bulk upload
+    platform: { type: String, required: true },
+    fulfillmentType: { type: String, required: true },
+    dimensions: {
+      length: { type: Number, default: 0 },
+      width: { type: Number, default: 0 },
+      height: { type: Number, default: 0 },
+    },
+    storageDuration: { type: Number, default: 1 },
+    commissionFee: { type: Number },
+    closingFee: { type: Number },
+    fulfillmentFee: { type: Number },
+    gstOnFees: { type: Number },
+    outputGST: { type: Number },
+    inputGSTCredit: { type: Number },
+    netGSTRemitted: { type: Number },
+    netPayout: { type: Number },
+    profit: { type: Number },
+    breakEvenPrice: { type: Number },
+    batchId: { type: String, default: null },
     isBulk: { type: Boolean, default: false },
-    fileName: { type: String, default: null }, // New field for file name
-
+    fileName: { type: String, default: null },
   },
   { timestamps: true }
 );

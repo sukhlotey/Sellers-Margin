@@ -7,31 +7,47 @@ export const calculateProfit = async (req, res) => {
     const {
       sellingPrice,
       costPrice,
+      importDuties,
       commissionPercent,
       gstPercent,
       shippingCost = 0,
       adCost = 0,
       weight = 0,
       category = "General",
+      platform = "Amazon",
+      fulfillmentType = "FBA",
+      dimensions = { length: 0, width: 0, height: 0 },
+      storageDuration = 1,
     } = req.body;
 
-    // Validate required fields
-    if (!sellingPrice || !costPrice || !commissionPercent || !gstPercent) {
+    if (!sellingPrice || !costPrice || !importDuties || !commissionPercent || !gstPercent) {
       return res.status(400).json({ message: "Missing required fields" });
     }
 
     const commissionFee = (sellingPrice * commissionPercent) / 100;
-    const gstTax = (sellingPrice * gstPercent) / 100;
-    const profit = sellingPrice - costPrice - commissionFee - gstTax - shippingCost - adCost;
-    const breakEvenPrice = costPrice + commissionFee + gstTax + shippingCost + adCost;
+    const closingFee = platform === "Amazon"
+      ? (sellingPrice < 300 ? 10 : sellingPrice <= 500 ? 15 : 45)
+      : sellingPrice * 0.025;
+    const volumetricWeight = dimensions.length && dimensions.width && dimensions.height
+      ? (dimensions.length * dimensions.width * dimensions.height) / 5000
+      : 1;
+    const fulfillmentFee = fulfillmentType === "SellerFulfilled" || (platform === "Amazon" && fulfillmentType === "EasyShip")
+      ? shippingCost
+      : (platform === "Amazon" ? 15 : 20) + shippingCost + (platform === "Amazon" ? 30 : 35) * storageDuration * volumetricWeight;
+    const gstOnFees = (commissionFee + closingFee + fulfillmentFee) * 0.18;
+    const outputGST = (sellingPrice * gstPercent) / 100;
+    const inputGSTCredit = importDuties * 0.18; // Assuming 18% IGST component
+    const netGSTRemitted = outputGST - inputGSTCredit;
+    const totalPlatformFees = commissionFee + closingFee + fulfillmentFee + gstOnFees;
+    const netPayout = sellingPrice - totalPlatformFees - netGSTRemitted;
+    const profit = netPayout - costPrice - importDuties;
+    const breakEvenPrice = costPrice + importDuties + commissionFee + closingFee + fulfillmentFee + gstOnFees + outputGST;
 
-    // Fetch user and check subscription status
     const user = await User.findById(req.user._id);
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
 
-    // Check subscription expiry and update user.isSubscribed if expired
     if (user.isSubscribed && user.planEnd && new Date(user.planEnd) < new Date()) {
       user.isSubscribed = false;
       user.plan = "free";
@@ -40,14 +56,12 @@ export const calculateProfit = async (req, res) => {
       await user.save();
     }
 
-    // Enforce 5-calculation limit for free plan users
     if (!user.isSubscribed && user.calcCount >= 5) {
       return res.status(403).json({
         message: "Free plan calculation limit reached. Please upgrade to continue.",
       });
     }
 
-    // Increment calcCount for non-subscribed users
     if (!user.isSubscribed) {
       user.calcCount = (user.calcCount || 0) + 1;
       await user.save();
@@ -56,14 +70,25 @@ export const calculateProfit = async (req, res) => {
     res.json({
       sellingPrice,
       costPrice,
+      importDuties,
       commissionPercent,
       gstPercent,
       shippingCost,
       adCost,
       weight,
       category,
+      platform,
+      fulfillmentType,
+      dimensions,
+      storageDuration,
       commissionFee,
-      gstTax,
+      closingFee,
+      fulfillmentFee,
+      gstOnFees,
+      outputGST,
+      inputGSTCredit,
+      netGSTRemitted,
+      netPayout,
       profit,
       breakEvenPrice,
       usageCount: user.calcCount,
@@ -81,26 +106,28 @@ export const calculateAndSaveProfit = async (req, res) => {
       productName,
       sellingPrice,
       costPrice,
+      importDuties,
       commissionPercent,
       gstPercent,
       shippingCost = 0,
       adCost = 0,
       weight = 0,
       category = "General",
+      platform = "Amazon",
+      fulfillmentType = "FBA",
+      dimensions = { length: 0, width: 0, height: 0 },
+      storageDuration = 1,
     } = req.body;
 
-    // Validate required fields
-    if (!productName || !sellingPrice || !costPrice || !commissionPercent || !gstPercent) {
+    if (!productName || !sellingPrice || !costPrice || !importDuties || !commissionPercent || !gstPercent) {
       return res.status(400).json({ message: "Missing required fields" });
     }
 
-    // Fetch user and check subscription status
     const user = await User.findById(req.user._id);
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
 
-    // Check subscription expiry and update user.isSubscribed if expired
     if (user.isSubscribed && user.planEnd && new Date(user.planEnd) < new Date()) {
       user.isSubscribed = false;
       user.plan = "free";
@@ -109,7 +136,6 @@ export const calculateAndSaveProfit = async (req, res) => {
       await user.save();
     }
 
-    // Enforce 5-save limit for free plan users
     if (!user.isSubscribed && user.calcCount > 5) {
       return res.status(403).json({
         message: "Free plan save limit reached. Please upgrade to continue.",
@@ -117,23 +143,48 @@ export const calculateAndSaveProfit = async (req, res) => {
     }
 
     const commissionFee = (sellingPrice * commissionPercent) / 100;
-    const gstTax = (sellingPrice * gstPercent) / 100;
-    const profit = sellingPrice - costPrice - commissionFee - gstTax - shippingCost - adCost;
-    const breakEvenPrice = costPrice + commissionFee + gstTax + shippingCost + adCost;
+    const closingFee = platform === "Amazon"
+      ? (sellingPrice < 300 ? 10 : sellingPrice <= 500 ? 15 : 45)
+      : sellingPrice * 0.025;
+    const volumetricWeight = dimensions.length && dimensions.width && dimensions.height
+      ? (dimensions.length * dimensions.width * dimensions.height) / 5000
+      : 1;
+    const fulfillmentFee = fulfillmentType === "SellerFulfilled" || (platform === "Amazon" && fulfillmentType === "EasyShip")
+      ? shippingCost
+      : (platform === "Amazon" ? 15 : 20) + shippingCost + (platform === "Amazon" ? 30 : 35) * storageDuration * volumetricWeight;
+    const gstOnFees = (commissionFee + closingFee + fulfillmentFee) * 0.18;
+    const outputGST = (sellingPrice * gstPercent) / 100;
+    const inputGSTCredit = importDuties * 0.18;
+    const netGSTRemitted = outputGST - inputGSTCredit;
+    const totalPlatformFees = commissionFee + closingFee + fulfillmentFee + gstOnFees;
+    const netPayout = sellingPrice - totalPlatformFees - netGSTRemitted;
+    const profit = netPayout - costPrice - importDuties;
+    const breakEvenPrice = costPrice + importDuties + commissionFee + closingFee + fulfillmentFee + gstOnFees + outputGST;
 
     const record = new ProfitFee({
       userId: req.user._id,
       productName,
       sellingPrice,
       costPrice,
+      importDuties,
       commissionPercent,
       gstPercent,
       shippingCost,
       adCost,
       category,
       weight,
+      platform,
+      fulfillmentType,
+      dimensions,
+      storageDuration,
       commissionFee,
-      gstTax,
+      closingFee,
+      fulfillmentFee,
+      gstOnFees,
+      outputGST,
+      inputGSTCredit,
+      netGSTRemitted,
+      netPayout,
       profit,
       breakEvenPrice,
     });
@@ -158,9 +209,23 @@ export const bulkSaveProfit = async (req, res) => {
 
     const enrichedRecords = records.map((r) => {
       const commissionFee = (r.sellingPrice * r.commissionPercent) / 100;
-      const gstTax = (r.sellingPrice * r.gstPercent) / 100;
-      const profit = r.sellingPrice - r.costPrice - commissionFee - gstTax - r.shippingCost - r.adCost;
-      const breakEvenPrice = r.costPrice + commissionFee + gstTax + r.shippingCost + r.adCost;
+      const closingFee = r.platform === "Amazon"
+        ? (r.sellingPrice < 300 ? 10 : r.sellingPrice <= 500 ? 15 : 45)
+        : r.sellingPrice * 0.025;
+      const volumetricWeight = r.dimensions?.length && r.dimensions?.width && r.dimensions?.height
+        ? (r.dimensions.length * r.dimensions.width * r.dimensions.height) / 5000
+        : 1;
+      const fulfillmentFee = r.fulfillmentType === "SellerFulfilled" || (r.platform === "Amazon" && r.fulfillmentType === "EasyShip")
+        ? r.shippingCost
+        : (r.platform === "Amazon" ? 15 : 20) + r.shippingCost + (r.platform === "Amazon" ? 30 : 35) * r.storageDuration * volumetricWeight;
+      const gstOnFees = (commissionFee + closingFee + fulfillmentFee) * 0.18;
+      const outputGST = (r.sellingPrice * r.gstPercent) / 100;
+      const inputGSTCredit = r.importDuties * 0.18;
+      const netGSTRemitted = outputGST - inputGSTCredit;
+      const totalPlatformFees = commissionFee + closingFee + fulfillmentFee + gstOnFees;
+      const netPayout = r.sellingPrice - totalPlatformFees - netGSTRemitted;
+      const profit = netPayout - r.costPrice - r.importDuties;
+      const breakEvenPrice = r.costPrice + r.importDuties + commissionFee + closingFee + fulfillmentFee + gstOnFees + outputGST;
 
       return {
         ...r,
@@ -169,7 +234,13 @@ export const bulkSaveProfit = async (req, res) => {
         isBulk: true,
         fileName,
         commissionFee,
-        gstTax,
+        closingFee,
+        fulfillmentFee,
+        gstOnFees,
+        outputGST,
+        inputGSTCredit,
+        netGSTRemitted,
+        netPayout,
         profit,
         breakEvenPrice,
       };
@@ -202,6 +273,7 @@ export const getBulkHistory = async (req, res) => {
           createdAt: { $first: "$createdAt" },
           recordsCount: { $sum: 1 },
           fileName: { $first: "$fileName" },
+          platform: { $first: "$platform" },
         },
       },
       { $sort: { createdAt: -1 } },

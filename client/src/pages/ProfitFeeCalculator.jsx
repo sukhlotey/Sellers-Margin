@@ -16,7 +16,6 @@ const ProfitFeeCalculator = () => {
 
   const handleCardClick = (selectedView) => {
     if (selectedView === "bulk" && !subscription?.isSubscribed) {
-      // Free users are blocked in BulkUploadModal, so allow navigation but modal will handle restriction
       setView(selectedView);
       setShowHistory(true);
     } else {
@@ -86,13 +85,6 @@ const ProfitFeeCalculator = () => {
                   <ProfitFeeForm />
                 </div>
                 <div className="history-column">
-                  {/* <button
-                    className="btn btn-secondary mb-2"
-                    onClick={() => setShowHistory((prev) => !prev)}
-                  >
-                    {showHistory ? <MdPlaylistRemove size={25}/> : <MdPlaylistAddCheck size={25} />} History
-                  </button>
-                  {showHistory && <ProfitFeeHistory />} */}
                   <ProfitFeeHistory />
                 </div>
               </>

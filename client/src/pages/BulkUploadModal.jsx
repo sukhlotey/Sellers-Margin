@@ -1,5 +1,5 @@
 import { useState, useContext, useEffect } from "react";
-import {useNavigate} from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import Papa from "papaparse";
 import * as XLSX from "xlsx";
 import { AuthContext } from "../context/AuthContext";
@@ -9,7 +9,7 @@ import { getPlans } from "../api/subscriptionApi";
 import axios from "axios";
 import { FiUpload } from "react-icons/fi";
 import { FaFileUpload } from "react-icons/fa";
-import { Alert, Snackbar, Modal, Box, Typography, Button, IconButton } from "@mui/material";
+import { Alert, Snackbar, Modal, Box, Typography, Button, IconButton, FormControl, InputLabel, Select, MenuItem } from "@mui/material";
 import { IoSaveOutline } from "react-icons/io5";
 import { RiCloseFill } from "react-icons/ri";
 import "../modules/Subscription/Plans.css";
@@ -23,6 +23,8 @@ const BulkUploadModal = () => {
     productName: "",
     sellingPrice: "",
     costPrice: "",
+    importDuties: "",
+    platform: "",
   });
   const [inputs, setInputs] = useState({
     commissionPercent: 15,
@@ -32,6 +34,12 @@ const BulkUploadModal = () => {
     weightSlab: "0-500",
     customWeight: "",
     customShipping: "",
+    platform: "Amazon",
+    fulfillmentType: "FBA",
+    length: "",
+    width: "",
+    height: "",
+    storageDuration: 1,
   });
   const [alert, setAlert] = useState({ open: false, message: "", severity: "error" });
   const [openModal, setOpenModal] = useState(false);
@@ -71,48 +79,46 @@ const BulkUploadModal = () => {
   const getShippingCost = (slab, customShipping) => {
     if (slab === "custom") return Number(customShipping) || 0;
     switch (slab) {
-      case "0-500":
-        return 40;
-      case "501-1000":
-        return 70;
-      case "1001-5000":
-        return 120;
-      default:
-        return 0;
+      case "0-500": return 40;
+      case "501-1000": return 70;
+      case "1001-5000": return 120;
+      default: return 0;
     }
   };
 
   const getWeight = (slab, customWeight) => {
     if (slab === "custom") return Number(customWeight) || 0;
     switch (slab) {
-      case "0-500":
-        return 500;
-      case "501-1000":
-        return 1000;
-      case "1001-5000":
-        return 5000;
-      default:
-        return 0;
+      case "0-500": return 500;
+      case "501-1000": return 1000;
+      case "1001-5000": return 5000;
+      default: return 0;
     }
   };
 
-  const getCommission = (category) => {
-    switch (category) {
-      case "Electronics":
-        return 8;
-      case "Books":
-        return 5;
-      case "Fashion":
-        return 15;
-      default:
-        return 15;
+  const getCommission = (category, platform, sellingPrice) => {
+    if (platform === "Amazon" && sellingPrice < 300) return 0;
+    if (platform === "Amazon") {
+      switch (category) {
+        case "Electronics": return 8;
+        case "Books": return 2;
+        case "Fashion": return 17;
+        default: return 15;
+      }
+    } else { // Flipkart
+      switch (category) {
+        case "Electronics": return 6;
+        case "Books": return 5;
+        case "Fashion": return 20;
+        default: return 15;
+      }
     }
   };
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    if (name === "category") {
-      setInputs({ ...inputs, category: value, commissionPercent: getCommission(value) });
+    if (name === "category" || name === "platform") {
+      setInputs({ ...inputs, [name]: value, commissionPercent: getCommission(name === "category" ? value : inputs.category, name === "platform" ? value : inputs.platform, inputs.sellingPrice || 1000) });
     } else {
       setInputs({ ...inputs, [name]: value });
     }
@@ -128,7 +134,7 @@ const BulkUploadModal = () => {
     setPreviewData([]);
     setCalculatedData([]);
     setColumnHeaders([]);
-    setColumnMapping({ productName: "", sellingPrice: "", costPrice: "" });
+    setColumnMapping({ productName: "", sellingPrice: "", costPrice: "", importDuties: "", platform: "" });
     console.log("Selected file:", e.target.files[0]);
   };
 
@@ -164,6 +170,8 @@ const BulkUploadModal = () => {
             productName: headers.find(h => h.toLowerCase().includes("product") || h.toLowerCase().includes("name")) || "",
             sellingPrice: headers.find(h => h.toLowerCase().includes("sell") || h.toLowerCase().includes("price")) || "",
             costPrice: headers.find(h => h.toLowerCase().includes("cost")) || "",
+            importDuties: headers.find(h => h.toLowerCase().includes("import") || h.toLowerCase().includes("duties")) || "",
+            platform: headers.find(h => h.toLowerCase().includes("platform")) || "",
           };
           setColumnMapping(suggestedMapping);
 
@@ -172,6 +180,8 @@ const BulkUploadModal = () => {
             productName: row[suggestedMapping.productName] || "",
             sellingPrice: parseFloat(row[suggestedMapping.sellingPrice]) || "",
             costPrice: parseFloat(row[suggestedMapping.costPrice]) || "",
+            importDuties: parseFloat(row[suggestedMapping.importDuties]) || "",
+            platform: row[suggestedMapping.platform] || "",
           }));
           setPreviewData(filteredData);
         },
@@ -191,6 +201,8 @@ const BulkUploadModal = () => {
           productName: headers.find(h => h.toLowerCase().includes("product") || h.toLowerCase().includes("name")) || "",
           sellingPrice: headers.find(h => h.toLowerCase().includes("sell") || h.toLowerCase().includes("price")) || "",
           costPrice: headers.find(h => h.toLowerCase().includes("cost")) || "",
+          importDuties: headers.find(h => h.toLowerCase().includes("import") || h.toLowerCase().includes("duties")) || "",
+          platform: headers.find(h => h.toLowerCase().includes("platform")) || "",
         };
         setColumnMapping(suggestedMapping);
 
@@ -199,6 +211,8 @@ const BulkUploadModal = () => {
           productName: row[suggestedMapping.productName] || "",
           sellingPrice: parseFloat(row[suggestedMapping.sellingPrice]) || "",
           costPrice: parseFloat(row[suggestedMapping.costPrice]) || "",
+          importDuties: parseFloat(row[suggestedMapping.importDuties]) || "",
+          platform: row[suggestedMapping.platform] || "",
         }));
         setPreviewData(filteredData);
       };
@@ -211,9 +225,11 @@ const BulkUploadModal = () => {
       columnMapping.productName &&
       columnMapping.sellingPrice &&
       columnMapping.costPrice &&
+      columnMapping.importDuties &&
       columnHeaders.includes(columnMapping.productName) &&
       columnHeaders.includes(columnMapping.sellingPrice) &&
-      columnHeaders.includes(columnMapping.costPrice)
+      columnHeaders.includes(columnMapping.costPrice) &&
+      columnHeaders.includes(columnMapping.importDuties)
     );
   };
 
@@ -227,7 +243,7 @@ const BulkUploadModal = () => {
     if (!validateMapping()) {
       setAlert({
         open: true,
-        message: "Please map all required columns (Product Name, Selling Price, Cost Price).",
+        message: "Please map all required columns (Product Name, Selling Price, Cost Price, Import Duties).",
         severity: "error",
       });
       return;
@@ -245,6 +261,8 @@ const BulkUploadModal = () => {
             productName: row[columnMapping.productName] || "",
             sellingPrice: parseFloat(row[columnMapping.sellingPrice]) || "",
             costPrice: parseFloat(row[columnMapping.costPrice]) || "",
+            importDuties: parseFloat(row[columnMapping.importDuties]) || "",
+            platform: row[columnMapping.platform] || inputs.platform,
           }));
           setPreviewData(filteredData);
         },
@@ -259,6 +277,8 @@ const BulkUploadModal = () => {
           productName: row[columnMapping.productName] || "",
           sellingPrice: parseFloat(row[columnMapping.sellingPrice]) || "",
           costPrice: parseFloat(row[columnMapping.costPrice]) || "",
+          importDuties: parseFloat(row[columnMapping.importDuties]) || "",
+          platform: row[columnMapping.platform] || inputs.platform,
         }));
         setPreviewData(filteredData);
       };
@@ -266,7 +286,7 @@ const BulkUploadModal = () => {
     }
   };
 
-  const calculateData = () => {
+  const calculateData = async () => {
     if (!subscription?.isSubscribed) {
       console.log("Opening modal: Free user attempting to calculate data");
       setOpenModal(true);
@@ -290,60 +310,114 @@ const BulkUploadModal = () => {
       return;
     }
 
-    const results = previewData.map((row) => {
-      const sellingPrice = parseFloat(row.sellingPrice);
-      const costPrice = parseFloat(row.costPrice);
-      const commissionPercent = parseFloat(inputs.commissionPercent);
-      const gstPercent = parseFloat(inputs.gstPercent);
-      const adCost = parseFloat(inputs.adCost) || 0;
-      const shippingCost = getShippingCost(inputs.weightSlab, inputs.customShipping);
-      const weight = getWeight(inputs.weightSlab, inputs.customWeight);
-      const category = inputs.category;
+    try {
+      const results = await Promise.all(previewData.map(async (row) => {
+        const sellingPrice = parseFloat(row.sellingPrice);
+        const costPrice = parseFloat(row.costPrice);
+        const importDuties = parseFloat(row.importDuties);
+        const commissionPercent = parseFloat(inputs.commissionPercent);
+        const gstPercent = parseFloat(inputs.gstPercent);
+        const adCost = parseFloat(inputs.adCost) || 0;
+        const shippingCost = getShippingCost(inputs.weightSlab, inputs.customShipping);
+        const weight = getWeight(inputs.weightSlab, inputs.customWeight);
+        const category = inputs.category;
+        const platform = row.platform || inputs.platform;
+        const fulfillmentType = inputs.fulfillmentType;
+        const dimensions = {
+          length: parseFloat(inputs.length) || 0,
+          width: parseFloat(inputs.width) || 0,
+          height: parseFloat(inputs.height) || 0,
+        };
+        const storageDuration = parseFloat(inputs.storageDuration) || 1;
 
-      if (!row.productName || isNaN(sellingPrice) || isNaN(costPrice) || isNaN(commissionPercent) || isNaN(gstPercent)) {
+        if (!row.productName || isNaN(sellingPrice) || isNaN(costPrice) || isNaN(importDuties) || isNaN(commissionPercent) || isNaN(gstPercent)) {
+          return {
+            productName: row.productName,
+            sellingPrice: isNaN(sellingPrice) ? row.sellingPrice : sellingPrice,
+            costPrice: isNaN(costPrice) ? row.costPrice : costPrice,
+            importDuties: isNaN(importDuties) ? row.importDuties : importDuties,
+            commissionFee: null,
+            closingFee: null,
+            fulfillmentFee: null,
+            gstOnFees: null,
+            outputGST: null,
+            inputGSTCredit: null,
+            netGSTRemitted: null,
+            netPayout: null,
+            profit: null,
+            breakEvenPrice: null,
+            shippingCost: null,
+            adCost: null,
+            weight: null,
+            category: null,
+            commissionPercent: null,
+            gstPercent: null,
+            platform,
+            fulfillmentType,
+            dimensions,
+            storageDuration,
+            error: "Missing or invalid productName, sellingPrice, costPrice, importDuties, commissionPercent, or gstPercent",
+          };
+        }
+
+        const res = await axios.post(
+          "http://localhost:5000/api/profit-fee/calculate",
+          {
+            sellingPrice,
+            costPrice,
+            importDuties,
+            commissionPercent,
+            gstPercent,
+            adCost,
+            shippingCost,
+            weight,
+            category,
+            platform,
+            fulfillmentType,
+            dimensions,
+            storageDuration,
+          },
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+
         return {
           productName: row.productName,
-          sellingPrice: isNaN(sellingPrice) ? row.sellingPrice : sellingPrice,
-          costPrice: isNaN(costPrice) ? row.costPrice : costPrice,
-          commissionFee: null,
-          gstTax: null,
-          profit: null,
-          breakEvenPrice: null,
-          shippingCost: null,
-          adCost: null,
-          weight: null,
-          category: null,
-          commissionPercent: null,
-          gstPercent: null,
-          error: "Missing or invalid productName, sellingPrice, costPrice, commissionPercent, or gstPercent",
+          sellingPrice,
+          costPrice,
+          importDuties,
+          commissionFee: res.data.commissionFee,
+          closingFee: res.data.closingFee,
+          fulfillmentFee: res.data.fulfillmentFee,
+          gstOnFees: res.data.gstOnFees,
+          outputGST: res.data.outputGST,
+          inputGSTCredit: res.data.inputGSTCredit,
+          netGSTRemitted: res.data.netGSTRemitted,
+          netPayout: res.data.netPayout,
+          profit: res.data.profit,
+          breakEvenPrice: res.data.breakEvenPrice,
+          shippingCost,
+          adCost,
+          weight,
+          category,
+          commissionPercent,
+          gstPercent,
+          platform,
+          fulfillmentType,
+          dimensions,
+          storageDuration,
         };
-      }
+      }));
 
-      const commissionFee = (sellingPrice * commissionPercent) / 100;
-      const gstTax = (sellingPrice * gstPercent) / 100;
-      const totalCost = costPrice + commissionFee + gstTax + shippingCost + adCost;
-      const profit = sellingPrice - totalCost;
-      const breakEvenPrice = totalCost;
-
-      return {
-        productName: row.productName,
-        sellingPrice,
-        costPrice,
-        commissionFee,
-        gstTax,
-        profit,
-        breakEvenPrice,
-        shippingCost,
-        adCost,
-        weight,
-        category,
-        commissionPercent,
-        gstPercent,
-      };
-    });
-
-    console.log("Calculated data:", results);
-    setCalculatedData(results);
+      console.log("Calculated data:", results);
+      setCalculatedData(results);
+    } catch (err) {
+      console.error("Bulk calculation error:", err.response?.data || err.message);
+      setAlert({
+        open: true,
+        message: err.response?.data?.message || "Error calculating bulk records",
+        severity: "error",
+      });
+    }
   };
 
   const handleSave = async () => {
@@ -383,7 +457,7 @@ const BulkUploadModal = () => {
       setPreviewData([]);
       setCalculatedData([]);
       setColumnHeaders([]);
-      setColumnMapping({ productName: "", sellingPrice: "", costPrice: "" });
+      setColumnMapping({ productName: "", sellingPrice: "", costPrice: "", importDuties: "", platform: "" });
     } catch (err) {
       console.error("Bulk save error:", err.response?.data || err.message);
       setAlert({
@@ -404,36 +478,40 @@ const BulkUploadModal = () => {
   };
 
   const handleBuy = async (plan) => {
-  if (!token) {
-    setAlert({ open: true, message: "Please login first!", severity: "error" });
-    return;
-  }
-  try {
-    const res = await axios.post(
-      "http://localhost:5000/api/subscription/create-order",
-      { plan },
-      { headers: { Authorization: `Bearer ${token}` } }
-    );
-    console.log("Create order response:", res.data);
-    navigate("/payment", { state: { paymentData: { order: res.data.order, plan } } });
-  } catch (err) {
-    console.error("Error creating payment:", err.response?.data || err.message);
-    setAlert({ open: true, message: err.response?.data?.message || "Error creating payment", severity: "error" });
-  }
-};
+    if (!token) {
+      setAlert({ open: true, message: "Please login first!", severity: "error" });
+      return;
+    }
+    try {
+      const res = await axios.post(
+        "http://localhost:5000/api/subscription/create-order",
+        { plan },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      console.log("Create order response:", res.data);
+      navigate("/payment", { state: { paymentData: { order: res.data.order, plan } } });
+    } catch (err) {
+      console.error("Error creating payment:", err.response?.data || err.message);
+      setAlert({ open: true, message: err.response?.data?.message || "Error creating payment", severity: "error" });
+    }
+  };
 
   return (
     <div className="profit-fee-card">
       <h4
-      style={{
-        fontWeight: "700",
-        color: "#1a3c87",
-        display: "flex",        alignItems: "center",
-        gap: "10px",
-      }}
-      className="bulk-title"> <FaFileUpload /> Bulk Upload Products</h4>
+        style={{
+          fontWeight: "700",
+          color: "#1a3c87",
+          display: "flex",
+          alignItems: "center",
+          gap: "10px",
+        }}
+        className="bulk-title"
+      >
+        <FaFileUpload /> Bulk Upload Products
+      </h4>
       <p>
-        Upload a <b>CSV or Excel (.xlsx)</b> file with columns for Product Name, Selling Price, and Cost Price (column names can vary; map them below).
+        Upload a <b>CSV or Excel (.xlsx)</b> file with columns for Product Name, Selling Price, Cost Price, Import Duties, and optionally Platform (column names can vary; map them below).
       </p>
 
       <div
@@ -468,7 +546,7 @@ const BulkUploadModal = () => {
         disabled={!file}
         style={{ marginTop: "1rem" }}
       >
-       <FaFileUpload />  Upload & Preview
+        <FaFileUpload /> Upload & Preview
       </button>
 
       {columnHeaders.length > 0 && (
@@ -476,56 +554,91 @@ const BulkUploadModal = () => {
           <h6>Map Columns</h6>
           <p>Select the columns from your file that correspond to the required fields.</p>
           <div className="column-mapping">
-            <div className="form-group">
-              <label>Product Name</label>
-              <select
+            <FormControl fullWidth margin="normal">
+              <InputLabel>Product Name</InputLabel>
+              <Select
                 name="productName"
                 value={columnMapping.productName}
                 onChange={handleColumnMappingChange}
+                label="Product Name"
               >
-                <option value="">Select Column</option>
+                <MenuItem value="">Select Column</MenuItem>
                 {columnHeaders.map((header) => (
-                  <option key={header} value={header}>
+                  <MenuItem key={header} value={header}>
                     {header}
-                  </option>
+                  </MenuItem>
                 ))}
-              </select>
-            </div>
-            <div className="form-group">
-              <label>Selling Price</label>
-              <select
+              </Select>
+            </FormControl>
+            <FormControl fullWidth margin="normal">
+              <InputLabel>Selling Price</InputLabel>
+              <Select
                 name="sellingPrice"
                 value={columnMapping.sellingPrice}
                 onChange={handleColumnMappingChange}
+                label="Selling Price"
               >
-                <option value="">Select Column</option>
+                <MenuItem value="">Select Column</MenuItem>
                 {columnHeaders.map((header) => (
-                  <option key={header} value={header}>
+                  <MenuItem key={header} value={header}>
                     {header}
-                  </option>
+                  </MenuItem>
                 ))}
-              </select>
-            </div>
-            <div className="form-group">
-              <label>Cost Price</label>
-              <select
+              </Select>
+            </FormControl>
+            <FormControl fullWidth margin="normal">
+              <InputLabel>Cost Price</InputLabel>
+              <Select
                 name="costPrice"
                 value={columnMapping.costPrice}
                 onChange={handleColumnMappingChange}
+                label="Cost Price"
               >
-                <option value="">Select Column</option>
+                <MenuItem value="">Select Column</MenuItem>
                 {columnHeaders.map((header) => (
-                  <option key={header} value={header}>
+                  <MenuItem key={header} value={header}>
                     {header}
-                  </option>
+                  </MenuItem>
                 ))}
-              </select>
-            </div>
+              </Select>
+            </FormControl>
+            <FormControl fullWidth margin="normal">
+              <InputLabel>Import Duties</InputLabel>
+              <Select
+                name="importDuties"
+                value={columnMapping.importDuties}
+                onChange={handleColumnMappingChange}
+                label="Import Duties"
+              >
+                <MenuItem value="">Select Column</MenuItem>
+                {columnHeaders.map((header) => (
+                  <MenuItem key={header} value={header}>
+                    {header}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+            <FormControl fullWidth margin="normal">
+              <InputLabel>Platform</InputLabel>
+              <Select
+                name="platform"
+                value={columnMapping.platform}
+                onChange={handleColumnMappingChange}
+                label="Platform"
+              >
+                <MenuItem value="">Select Column</MenuItem>
+                {columnHeaders.map((header) => (
+                  <MenuItem key={header} value={header}>
+                    {header}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
           </div>
           <button
             className="calc-btn"
             onClick={handleApplyMapping}
-            disabled={!columnMapping.productName || !columnMapping.sellingPrice || !columnMapping.costPrice}
+            disabled={!columnMapping.productName || !columnMapping.sellingPrice || !columnMapping.costPrice || !columnMapping.importDuties}
           >
             Apply Mapping
           </button>
@@ -542,6 +655,8 @@ const BulkUploadModal = () => {
                   <th>Product Name</th>
                   <th>Selling Price</th>
                   <th>Cost Price</th>
+                  <th>Import Duties</th>
+                  <th>Platform</th>
                 </tr>
               </thead>
               <tbody>
@@ -550,6 +665,8 @@ const BulkUploadModal = () => {
                     <td>{row.productName}</td>
                     <td>{typeof row.sellingPrice === 'number' && !isNaN(row.sellingPrice) ? row.sellingPrice.toFixed(2) : row.sellingPrice}</td>
                     <td>{typeof row.costPrice === 'number' && !isNaN(row.costPrice) ? row.costPrice.toFixed(2) : row.costPrice}</td>
+                    <td>{typeof row.importDuties === 'number' && !isNaN(row.importDuties) ? row.importDuties.toFixed(2) : row.importDuties}</td>
+                    <td>{row.platform || inputs.platform}</td>
                   </tr>
                 ))}
               </tbody>
@@ -558,26 +675,53 @@ const BulkUploadModal = () => {
 
           <h6>Customize Calculation Parameters</h6>
           <div className="mt-3 d-flex gap-3 flex-wrap">
-            <div className="form-group">
-              <label>Category</label>
-              <select name="category" value={inputs.category} onChange={handleInputChange}>
-                <option value="">--Select Category--</option>
-                <option value="General">General (15%)</option>
-                <option value="Electronics">Electronics (8%)</option>
-                <option value="Fashion">Fashion (15%)</option>
-                <option value="Books">Books (5%)</option>
-              </select>
-            </div>
-            <div className="form-group">
-              <label>Weight Slab</label>
-              <select name="weightSlab" value={inputs.weightSlab} onChange={handleInputChange}>
-                <option value="">--Select Weight Slab--</option>
-                <option value="0-500">0 - 500g (₹40)</option>
-                <option value="501-1000">501g - 1kg (₹70)</option>
-                <option value="1001-5000">1kg - 5kg (₹120)</option>
-                <option value="custom">Custom</option>
-              </select>
-            </div>
+            <FormControl className="form-group">
+              <InputLabel>Platform</InputLabel>
+              <Select
+                name="platform"
+                value={inputs.platform}
+                onChange={handleInputChange}
+                label="Platform"
+              >
+                <MenuItem value="Amazon">Amazon</MenuItem>
+                <MenuItem value="Flipkart">Flipkart</MenuItem>
+              </Select>
+            </FormControl>
+            <FormControl className="form-group">
+              <InputLabel>Category</InputLabel>
+              <Select
+                name="category"
+                value={inputs.category}
+                onChange={handleInputChange}
+                label="Category"
+              >
+                {inputs.platform === "Amazon" ? [
+                  <MenuItem key="General" value="General">General (15%)</MenuItem>,
+                  <MenuItem key="Electronics" value="Electronics">Electronics (8%)</MenuItem>,
+                  <MenuItem key="Fashion" value="Fashion">Fashion (17%)</MenuItem>,
+                  <MenuItem key="Books" value="Books">Books (2%)</MenuItem>
+                ] : [
+                  <MenuItem key="General" value="General">General (15%)</MenuItem>,
+                  <MenuItem key="Electronics" value="Electronics">Electronics (6%)</MenuItem>,
+                  <MenuItem key="Fashion" value="Fashion">Fashion (20%)</MenuItem>,
+                  <MenuItem key="Books" value="Books">Books (5%)</MenuItem>
+                ]}
+              </Select>
+            </FormControl>
+            <FormControl className="form-group">
+              <InputLabel>Weight Slab</InputLabel>
+              <Select
+                name="weightSlab"
+                value={inputs.weightSlab}
+                onChange={handleInputChange}
+                label="Weight Slab"
+              >
+                <MenuItem value="0-500">0 - 500g (₹40)</MenuItem>
+                <MenuItem value="501-1000">501g - 1kg (₹70)</MenuItem>
+                <MenuItem value="1001-5000">1kg - 5kg (₹120)</MenuItem>
+                <MenuItem value="custom">Custom</MenuItem>
+              </Select>
+            </FormControl>
             {inputs.weightSlab === "custom" && (
               <>
                 <div className="form-group">
@@ -602,6 +746,60 @@ const BulkUploadModal = () => {
                 </div>
               </>
             )}
+            <FormControl className="form-group">
+              <InputLabel>Fulfillment Type</InputLabel>
+              <Select
+                name="fulfillmentType"
+                value={inputs.fulfillmentType}
+                onChange={handleInputChange}
+                label="Fulfillment Type"
+              >
+                {inputs.platform === "Amazon" ? [
+                  <MenuItem key="FBA" value="FBA">FBA</MenuItem>,
+                  <MenuItem key="SellerFulfilled" value="SellerFulfilled">Seller Fulfilled</MenuItem>,
+                  <MenuItem key="EasyShip" value="EasyShip">Easy Ship</MenuItem>
+                ] : [
+                  <MenuItem key="FBF" value="FBF">FBF</MenuItem>,
+                  <MenuItem key="SellerFulfilled" value="SellerFulfilled">Seller Fulfilled</MenuItem>
+                ]}
+              </Select>
+            </FormControl>
+            <div className="form-group">
+              <label>Length (cm)</label>
+              <input
+                type="number"
+                name="length"
+                value={inputs.length}
+                onChange={handleInputChange}
+              />
+            </div>
+            <div className="form-group">
+              <label>Width (cm)</label>
+              <input
+                type="number"
+                name="width"
+                value={inputs.width}
+                onChange={handleInputChange}
+              />
+            </div>
+            <div className="form-group">
+              <label>Height (cm)</label>
+              <input
+                type="number"
+                name="height"
+                value={inputs.height}
+                onChange={handleInputChange}
+              />
+            </div>
+            <div className="form-group">
+              <label>Storage Duration (months)</label>
+              <input
+                type="number"
+                name="storageDuration"
+                value={inputs.storageDuration}
+                onChange={handleInputChange}
+              />
+            </div>
             <div className="form-group">
               <label>Ad Cost (₹)</label>
               <input
@@ -647,12 +845,21 @@ const BulkUploadModal = () => {
                   <th>Product Name</th>
                   <th>Selling Price</th>
                   <th>Cost Price</th>
+                  <th>Import Duties</th>
+                  <th>Platform</th>
                   <th>Commission Fee</th>
-                  <th>GST Tax</th>
+                  <th>{inputs.platform === "Amazon" ? "Closing Fee" : "Collection Fee"}</th>
+                  <th>Fulfillment Fee</th>
+                  <th>GST on Fees</th>
+                  <th>Output GST</th>
+                  <th>Input GST Credit</th>
+                  <th>Net GST Remitted</th>
+                  <th>Net Payout</th>
                   <th>Shipping Cost</th>
                   <th>Ad Cost</th>
                   <th>Weight</th>
                   <th>Category</th>
+                  <th>Fulfillment Type</th>
                   <th>Profit</th>
                   <th>Break Even Price</th>
                   {calculatedData.some(row => row.error) && <th>Error</th>}
@@ -671,51 +878,26 @@ const BulkUploadModal = () => {
                     }
                   >
                     <td>{row.productName}</td>
-                    <td>
-                      {typeof row.sellingPrice === "number" && !isNaN(row.sellingPrice)
-                        ? row.sellingPrice.toFixed(2)
-                        : row.sellingPrice}
-                    </td>
-                    <td>
-                      {typeof row.costPrice === "number" && !isNaN(row.costPrice)
-                        ? row.costPrice.toFixed(2)
-                        : row.costPrice}
-                    </td>
-                    <td>
-                      {typeof row.commissionFee === "number" && !isNaN(row.commissionFee)
-                        ? row.commissionFee.toFixed(2)
-                        : "N/A"}
-                    </td>
-                    <td>
-                      {typeof row.gstTax === "number" && !isNaN(row.gstTax)
-                        ? row.gstTax.toFixed(2)
-                        : "N/A"}
-                    </td>
-                    <td>
-                      {typeof row.shippingCost === "number" && !isNaN(row.shippingCost)
-                        ? row.shippingCost.toFixed(2)
-                        : "N/A"}
-                    </td>
-                    <td>
-                      {typeof row.adCost === "number" && !isNaN(row.adCost)
-                        ? row.adCost.toFixed(2)
-                        : "N/A"}
-                    </td>
-                    <td>
-                      {typeof row.weight === "number" && !isNaN(row.weight) ? row.weight : "N/A"}
-                    </td>
+                    <td>{typeof row.sellingPrice === "number" && !isNaN(row.sellingPrice) ? row.sellingPrice.toFixed(2) : row.sellingPrice}</td>
+                    <td>{typeof row.costPrice === "number" && !isNaN(row.costPrice) ? row.costPrice.toFixed(2) : row.costPrice}</td>
+                    <td>{typeof row.importDuties === "number" && !isNaN(row.importDuties) ? row.importDuties.toFixed(2) : row.importDuties}</td>
+                    <td>{row.platform}</td>
+                    <td>{typeof row.commissionFee === "number" && !isNaN(row.commissionFee) ? row.commissionFee.toFixed(2) : "N/A"}</td>
+                    <td>{typeof row.closingFee === "number" && !isNaN(row.closingFee) ? row.closingFee.toFixed(2) : "N/A"}</td>
+                    <td>{typeof row.fulfillmentFee === "number" && !isNaN(row.fulfillmentFee) ? row.fulfillmentFee.toFixed(2) : "N/A"}</td>
+                    <td>{typeof row.gstOnFees === "number" && !isNaN(row.gstOnFees) ? row.gstOnFees.toFixed(2) : "N/A"}</td>
+                    <td>{typeof row.outputGST === "number" && !isNaN(row.outputGST) ? row.outputGST.toFixed(2) : "N/A"}</td>
+                    <td>{typeof row.inputGSTCredit === "number" && !isNaN(row.inputGSTCredit) ? row.inputGSTCredit.toFixed(2) : "N/A"}</td>
+                    <td>{typeof row.netGSTRemitted === "number" && !isNaN(row.netGSTRemitted) ? row.netGSTRemitted.toFixed(2) : "N/A"}</td>
+                    <td>{typeof row.netPayout === "number" && !isNaN(row.netPayout) ? row.netPayout.toFixed(2) : "N/A"}</td>
+                    <td>{typeof row.shippingCost === "number" && !isNaN(row.shippingCost) ? row.shippingCost.toFixed(2) : "N/A"}</td>
+                    <td>{typeof row.adCost === "number" && !isNaN(row.adCost) ? row.adCost.toFixed(2) : "N/A"}</td>
+                    <td>{typeof row.weight === "number" && !isNaN(row.weight) ? row.weight : "N/A"}</td>
                     <td>{row.category || "N/A"}</td>
-                    <td>
-                      {typeof row.profit === "number" && !isNaN(row.profit)
-                        ? row.profit.toFixed(2)
-                        : "Invalid"}
-                    </td>
-                    <td>
-                      {typeof row.breakEvenPrice === "number" && !isNaN(row.breakEvenPrice)
-                        ? row.breakEvenPrice.toFixed(2)
-                        : "N/A"}
-                    </td>
-                    {row.error && <td>{row.error}</td>}
+                    <td>{row.fulfillmentType || "N/A"}</td>
+                    <td>{typeof row.profit === "number" && !isNaN(row.profit) ? row.profit.toFixed(2) : "Invalid"}</td>
+                    <td>{typeof row.breakEvenPrice === "number" && !isNaN(row.breakEvenPrice) ? row.breakEvenPrice.toFixed(2) : "N/A"}</td>
+                    {row.error && <th>{row.error}</th>}
                   </tr>
                 ))}
               </tbody>
@@ -751,7 +933,6 @@ const BulkUploadModal = () => {
       >
         <Box
           sx={{
-            // position: "absolute",
             top: "50%",
             left: "50%",
             transform: "translate(-50%, -50%)",

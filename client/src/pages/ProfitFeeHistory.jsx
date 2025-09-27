@@ -29,82 +29,118 @@ const ProfitFeeHistory = () => {
 
   const formatNumber = (value) => (typeof value === "number" && !isNaN(value) ? value.toFixed(2) : "N/A");
 
- const downloadPDF = () => {
-  const doc = new jsPDF();
-  doc.text("Profit Fee History Report", 14, 10);
+  const downloadPDF = () => {
+    const doc = new jsPDF();
+    doc.text("Profit Fee History Report", 14, 10);
 
-  const tableData = history.map((item) => [
-    item.productName || "N/A",
-    formatNumber(item.sellingPrice),
-    formatNumber(item.costPrice),
-    formatNumber(item.commissionFee),
-    formatNumber(item.gstTax),
-    formatNumber(item.shippingCost),
-    formatNumber(item.adCost),
-    item.weight ?? "N/A",
-    item.category || "N/A",
-    formatNumber(item.profit),
-    formatNumber(item.breakEvenPrice),
-    formatNumber(item.commissionPercent),
-    formatNumber(item.gstPercent),
-    new Date(item.createdAt).toLocaleString(),
-  ]);
+    const tableData = history.map((item) => [
+      item.productName || "N/A",
+      item.platform || "N/A",
+      formatNumber(item.sellingPrice),
+      formatNumber(item.costPrice),
+      formatNumber(item.importDuties),
+      formatNumber(item.commissionFee),
+      formatNumber(item.closingFee),
+      formatNumber(item.fulfillmentFee),
+      formatNumber(item.gstOnFees),
+      formatNumber(item.outputGST),
+      formatNumber(item.inputGSTCredit),
+      formatNumber(item.netGSTRemitted),
+      formatNumber(item.shippingCost),
+      formatNumber(item.adCost),
+      item.weight ?? "N/A",
+      item.category || "N/A",
+      item.fulfillmentType || "N/A",
+      formatNumber(item.netPayout),
+      formatNumber(item.profit),
+      formatNumber(item.breakEvenPrice),
+      formatNumber(item.commissionPercent),
+      formatNumber(item.gstPercent),
+      new Date(item.createdAt).toLocaleString(),
+    ]);
 
-  autoTable(doc, {
-    head: [
-      [
-        "Product",
-        "SP",
-        "CP",
-        "Comm. Fee",
-        "GST Tax",
-        "Shipping",
-        "Ad Cost",
-        "Weight (g)",
-        "Category",
-        "Profit",
-        "Break Even",
-        "Comm. %",
-        "GST %",
-        "Date",
+    autoTable(doc, {
+      head: [
+        [
+          "Product",
+          "Platform",
+          "SP",
+          "CP",
+          "Import Duties",
+          "Comm. Fee",
+          "Closing Fee",
+          "Fulfill. Fee",
+          "GST on Fees",
+          "Output GST",
+          "Input GST Credit",
+          "Net GST",
+          "Shipping",
+          "Ad Cost",
+          "Weight (g)",
+          "Category",
+          "Fulfill. Type",
+          "Net Payout",
+          "Profit",
+          "Break Even",
+          "Comm. %",
+          "GST %",
+          "Date",
+        ],
       ],
-    ],
-    body: tableData,
-    styles: { fontSize: 8, overflow: "linebreak" },
-    columnStyles: {
-      0: { cellWidth: 25 }, // Product
-      1: { cellWidth: 12 }, // SP
-      2: { cellWidth: 12 }, // CP
-      3: { cellWidth: 12 }, // Comm. Fee
-      4: { cellWidth: 12 }, // GST Tax
-      5: { cellWidth: 12 }, // Shipping
-      6: { cellWidth: 12 }, // Ad Cost
-      7: { cellWidth: 12 }, // Weight
-      8: { cellWidth: 15 }, // Category
-      9: { cellWidth: 12 }, // Profit
-      10: { cellWidth: 12 }, // Break Even
-      11: { cellWidth: 12 }, // Comm. %
-      12: { cellWidth: 12 }, // GST %
-      13: { cellWidth: 15 }, // Date
-    },
-    margin: { top: 20, left: 10, right: 10 },
-  });
+      body: tableData,
+      styles: { fontSize: 7, overflow: "linebreak" },
+      columnStyles: {
+        0: { cellWidth: 20 }, // Product
+        1: { cellWidth: 10 }, // Platform
+        2: { cellWidth: 10 }, // SP
+        3: { cellWidth: 10 }, // CP
+        4: { cellWidth: 10 }, // Import Duties
+        5: { cellWidth: 10 }, // Comm. Fee
+        6: { cellWidth: 10 }, // Closing Fee
+        7: { cellWidth: 10 }, // Fulfill. Fee
+        8: { cellWidth: 10 }, // GST on Fees
+        9: { cellWidth: 10 }, // Output GST
+        10: { cellWidth: 10 }, // Input GST Credit
+        11: { cellWidth: 10 }, // Net GST
+        12: { cellWidth: 10 }, // Shipping
+        13: { cellWidth: 10 }, // Ad Cost
+        14: { cellWidth: 10 }, // Weight
+        15: { cellWidth: 10 }, // Category
+        16: { cellWidth: 10 }, // Fulfill. Type
+        17: { cellWidth: 10 }, // Net Payout
+        18: { cellWidth: 10 }, // Profit
+        19: { cellWidth: 10 }, // Break Even
+        20: { cellWidth: 10 }, // Comm. %
+        21: { cellWidth: 10 }, // GST %
+        22: { cellWidth: 15 }, // Date
+      },
+      margin: { top: 20, left: 5, right: 5 },
+    });
 
-  doc.save("profit_fee_report.pdf");
-};
+    doc.save("profit_fee_report.pdf");
+  };
 
   const downloadExcel = () => {
     const ws = XLSX.utils.json_to_sheet(
       history.map((item) => ({
         Product: item.productName || "N/A",
+        Platform: item.platform || "N/A",
         SellingPrice: formatNumber(item.sellingPrice),
         CostPrice: formatNumber(item.costPrice),
+        ImportDuties: formatNumber(item.importDuties),
         CommissionFee: formatNumber(item.commissionFee),
-        GSTTax: formatNumber(item.gstTax),
+        ClosingFee: formatNumber(item.closingFee),
+        FulfillmentFee: formatNumber(item.fulfillmentFee),
+        GSTOnFees: formatNumber(item.gstOnFees),
+        OutputGST: formatNumber(item.outputGST),
+        InputGSTCredit: formatNumber(item.inputGSTCredit),
+        NetGSTRemitted: formatNumber(item.netGSTRemitted),
         ShippingCost: formatNumber(item.shippingCost),
         AdCost: formatNumber(item.adCost),
         Weight: item.weight ?? "N/A",
         Category: item.category || "N/A",
+        FulfillmentType: item.fulfillmentType || "N/A",
+        NetPayout: formatNumber(item.netPayout),
         Profit: formatNumber(item.profit),
         BreakEvenPrice: formatNumber(item.breakEvenPrice),
         CommissionPercent: formatNumber(item.commissionPercent),
@@ -142,7 +178,7 @@ const ProfitFeeHistory = () => {
               key={item._id}
               className={item.profit >= 0 ? "profit-positive" : "profit-negative"}
             >
-              <strong>{item.productName}</strong> — Profit: ₹{formatNumber(item.profit)}
+              <strong>{item.productName}</strong> ({item.platform}) — Profit: ₹{formatNumber(item.profit)}
               <br />
               <small>{new Date(item.createdAt).toLocaleString()}</small>
             </li>
