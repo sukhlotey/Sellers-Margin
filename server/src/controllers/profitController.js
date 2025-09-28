@@ -358,3 +358,47 @@ export const deleteMultipleBulkBatches = async (req, res) => {
     res.status(500).json({ message: "Error deleting bulk batches", error: error.message });
   }
 };
+
+// Delete a single non-bulk ProfitFee record by ID
+export const deleteProfitRecord = async (req, res) => {
+  try {
+    const { id } = req.params;
+    if (!id) {
+      return res.status(400).json({ message: "Record ID is required" });
+    }
+    const result = await ProfitFee.deleteOne({
+      userId: req.user._id,
+      _id: id,
+      isBulk: false,
+    });
+    if (result.deletedCount === 0) {
+      return res.status(404).json({ message: "Record not found or already deleted" });
+    }
+    res.json({ message: "Record deleted successfully" });
+  } catch (error) {
+    console.error("deleteProfitRecord error:", error);
+    res.status(500).json({ message: "Error deleting record", error: error.message });
+  }
+};
+
+// Delete multiple non-bulk ProfitFee records by IDs
+export const deleteMultipleProfitRecords = async (req, res) => {
+  try {
+    const { recordIds } = req.body;
+    if (!recordIds || !Array.isArray(recordIds) || recordIds.length === 0) {
+      return res.status(400).json({ message: "No record IDs provided" });
+    }
+    const result = await ProfitFee.deleteMany({
+      userId: req.user._id,
+      _id: { $in: recordIds },
+      isBulk: false,
+    });
+    if (result.deletedCount === 0) {
+      return res.status(404).json({ message: "No records found or already deleted" });
+    }
+    res.json({ message: `${result.deletedCount} record(s) deleted successfully` });
+  } catch (error) {
+    console.error("deleteMultipleProfitRecords error:", error);
+    res.status(500).json({ message: "Error deleting records", error: error.message });
+  }
+};

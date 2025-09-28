@@ -20,13 +20,31 @@ const UploadReport = () => {
   const [file, setFile] = useState(null);
   const [marketplace, setMarketplace] = useState("generic");
   const [uploadResult, setUploadResult] = useState(null);
-  const [showPreview, setShowPreview] = useState(false);
+  const [showPreview, setShowPreview] = useState(false); // For supported columns table
+  const [showFilePreview, setShowFilePreview] = useState(false); // For file data preview
+  const [previewData, setPreviewData] = useState([]);
+  const [fileHeaders, setFileHeaders] = useState([]);
   const [showPlansModal, setShowPlansModal] = useState(false);
+  const [columnMapping, setColumnMapping] = useState({
+    orderId: "",
+    productName: "",
+    settlementId: "",
+    orderDate: "",
+    quantity: "",
+    grossAmount: "",
+    costPrice: "",
+    commission: "",
+    shippingFee: "",
+    otherFee: "",
+    gstCollected: "",
+    gstOnFees: "",
+    netPayout: "",
+    returnAmount: "",
+  });
   const fileInputRef = useRef(null);
   const { showAlert } = useAlert();
   const navigate = useNavigate();
 
-  // Supported columns based on columnMap from settlementParser.js
   const supportedColumns = [
     { internal: "orderId", names: ["order-id", "Order ID", "order", "amazon-order-id", "Order Item ID", "merchant-order-id"] },
     { internal: "productName", names: ["sku", "asin", "Product", "item-name", "Product Name", "Seller SKU ID"] },
@@ -41,16 +59,95 @@ const UploadReport = () => {
     { internal: "gstCollected", names: ["tax", "gst", "gst-collected", "tax-collected", "gst-on-sales", "GST on Sales", "igst", "cgst", "sgst"] },
     { internal: "gstOnFees", names: ["gst-on-fees", "fee-gst", "gst-on-marketplace-fees", "GST on Fees", "tax-deducted"] },
     { internal: "netPayout", names: ["settlement-amount", "net-settlement-amount", "total-settlement", "payout", "net-amount", "net-payout", "amount-paid", "Settlement Value (Rs)"] },
+    { internal: "returnAmount", names: ["return-amount", "refund", "return-value", "Return Amount"] },
   ];
 
-  // Plans to display in modal (all_monthly and annual)
+  const platformRequiredColumns = {
+    amazon: ["settlementId", "orderId", "grossAmount", "gstCollected"],
+    flipkart: ["settlementId", "orderId", "grossAmount", "gstCollected"],
+    generic: ["orderId", "grossAmount"],
+  };
+
   const premiumPlans = [
     { id: "all_monthly", name: "All Access Monthly", price: 499, duration: "30 days" },
     { id: "annual", name: "All Access Annually", price: 1799, duration: "365 days" },
   ];
 
+  const validateFileHeaders = (headers) => {
+    const required = platformRequiredColumns[marketplace];
+    const missing = required.filter((col) => !headers.some((h) => supportedColumns.find((sc) => sc.internal === col)?.names.includes(h) || columnMapping[col] === h));
+    if (missing.length > 0) {
+      showAlert("error", `Missing required columns for ${marketplace}: ${missing.join(", ")}`);
+      return false;
+    }
+    return true;
+  };
+
   const handleFileChange = (e) => {
-    setFile(e.target.files[0]);
+    const selectedFile = e.target.files[0];
+    setFile(selectedFile);
+    setPreviewData([]);
+    setFileHeaders([]);
+    setShowFilePreview(false);
+    if (selectedFile) {
+      const reader = new FileReader();
+      reader.onload = (evt) => {
+        try {
+          const data = evt.target.result;
+          let rows;
+          if (selectedFile.name.endsWith(".csv")) {
+            const text = new TextDecoder("utf-8").decode(data);
+            rows = text.split("\n").map(row => row.split(",").map(cell => cell.trim()));
+          } else {
+            const workbook = XLSX.read(data, { type: "array", raw: false });
+            const sheetName = workbook.SheetNames[0];
+            rows = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName], { header: 1, raw: false });
+          }
+          if (rows.length === 0) {
+            showAlert("error", "File is empty or could not be parsed.");
+            return;
+          }
+          setFileHeaders(rows[0] || []);
+          setPreviewData(rows.slice(1, Math.min(rows.length, 11))); // Limit to 10 rows for preview
+          // Suggest initial mappings
+          const suggestedMapping = {};
+          Object.keys(columnMapping).forEach((key) => {
+            const col = supportedColumns.find((sc) => sc.internal === key);
+            suggestedMapping[key] = rows[0].find((h) => col?.names.includes(h)) || "";
+          });
+          setColumnMapping(suggestedMapping);
+        } catch (error) {
+          showAlert("error", "Error parsing file. Please ensure it's a valid CSV or Excel file.");
+          console.error("File parsing error:", error);
+        }
+      };
+      reader.onerror = () => {
+        showAlert("error", "Error reading file.");
+      };
+      if (selectedFile.name.endsWith(".csv")) {
+        reader.readAsArrayBuffer(selectedFile);
+      } else {
+        reader.readAsArrayBuffer(selectedFile);
+      }
+    }
+  };
+
+  const handleColumnMappingChange = (e) => {
+    const { name, value } = e.target;
+    setColumnMapping({ ...columnMapping, [name]: value });
+  };
+
+  const handlePreview = () => {
+    if (!file) {
+      showAlert("error", "Please select a file first!");
+      return;
+    }
+    if (!validateFileHeaders(fileHeaders)) return;
+    if (previewData.length === 0) {
+      showAlert("error", "No data available to preview.");
+      return;
+    }
+    setShowFilePreview(true);
   };
 
   const handleBuy = async (plan) => {
@@ -64,11 +161,9 @@ const UploadReport = () => {
         { plan },
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      console.log("Create order response:", res.data);
       setShowPlansModal(false);
       navigate("/payment", { state: { paymentData: { order: res.data.order, plan } } });
     } catch (err) {
-      console.error("Error creating payment:", err.response?.data || err.message);
       showAlert("error", err.response?.data?.message || "Error creating payment");
     }
   };
@@ -78,26 +173,23 @@ const UploadReport = () => {
       showAlert("error", "Please select a file first!");
       return;
     }
-
-    // Check subscription plan
     if (!subscription.isSubscribed || subscription.plan === "free" || subscription.plan === "basic_monthly") {
       setShowPlansModal(true);
       return;
     }
-
+    if (!validateFileHeaders(fileHeaders)) return;
     try {
       const formData = new FormData();
       formData.append("file", file);
       formData.append("marketplace", marketplace);
-
+      formData.append("columnMapping", JSON.stringify(columnMapping));
       const res = await uploadSettlement(formData, token);
       setUploadResult(res.data);
       setSummary(res.data.summary);
-
       showAlert("success", "Report uploaded & processed successfully!");
     } catch (error) {
-      console.error("Upload error:", error.response?.data || error.message);
-      showAlert("error", "Upload failed! Please ensure the file is a valid CSV or Excel.");
+      // Show specific error message from backend or parser
+      showAlert("error",error.response?.data?.error|| error.error || error.response?.data?.message || error.message || "Failed to upload file. Please check the file and try again.");
     }
   };
 
@@ -113,7 +205,7 @@ const UploadReport = () => {
       showAlert("error", "No report to download!");
       return;
     }
-
+    const getFeeLabel = () => (marketplace === "amazon" ? "Closing Fee" : marketplace === "flipkart" ? "Collection Fee" : "Other Fee");
     const records = uploadResult.records.map((record) => ({
       "Order ID": record.orderId || "",
       "Date": record.orderDate ? new Date(record.orderDate).toLocaleDateString() : "",
@@ -123,7 +215,7 @@ const UploadReport = () => {
       "Cost Price": record.costPrice || 0,
       "Commission Fee": record.feesBreakdown.commission || 0,
       "Shipping Fee": record.feesBreakdown.shippingFee || 0,
-      "Other Charges": record.feesBreakdown.otherFee || 0,
+      [getFeeLabel()]: record.feesBreakdown.otherFee || 0,
       "GST on Fees": record.gstOnFees || 0,
       "Total Settlement Amount": record.netPayout || 0,
       "GST Collected": record.gstCollected || 0,
@@ -133,6 +225,7 @@ const UploadReport = () => {
       "Margin %": record.margin ? record.margin.toFixed(2) : 0,
       "Status": record.reconciliationStatus || "Pending",
       "Notes": record.reconciliationNotes || "",
+      "Return Amount": record.returnAmount || 0,
     }));
 
     const summary = [
@@ -143,13 +236,12 @@ const UploadReport = () => {
       { "Metric": "Net GST Liability", "Value": uploadResult.summary.netGST.toFixed(2) },
       { "Metric": "Total Gross Profit", "Value": uploadResult.summary.totalGrossProfit.toFixed(2) },
       { "Metric": "Total Net Profit", "Value": uploadResult.summary.totalNetProfit.toFixed(2) },
+      { "Metric": "Total Returns", "Value": uploadResult.summary.totalReturns.toFixed(2) },
       { "Metric": "Final Net Settlement", "Value": uploadResult.summary.totalNetPayout.toFixed(2) },
     ];
 
     const wb = XLSX.utils.book_new();
     const wsRecords = XLSX.utils.json_to_sheet(records);
-
-    // Apply background colors based on Net Profit
     const range = XLSX.utils.decode_range(wsRecords["!ref"]);
     for (let row = range.s.r + 1; row <= range.e.r; row++) {
       const netProfitCell = `O${row + 1}`;
@@ -165,12 +257,9 @@ const UploadReport = () => {
         wsRecords[cellAddress].s = fillStyle;
       }
     }
-
     const wsSummary = XLSX.utils.json_to_sheet(summary);
-
     XLSX.utils.book_append_sheet(wb, wsRecords, "Order Details");
     XLSX.utils.book_append_sheet(wb, wsSummary, "Summary");
-
     const excelBuffer = XLSX.write(wb, { bookType: "xlsx", type: "array" });
     const data = new Blob([excelBuffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
     saveAs(data, uploadResult.report.filename.replace(/\.[^/.]+$/, "") + "_processed.xlsx");
@@ -184,13 +273,9 @@ const UploadReport = () => {
         </h3>
         <div className="gst-preview-section">
           <p>
-            Upload a <b>CSV or Excel (.xlsx)</b> and will mapped to file with columns: Order ID, Product Name, Selling Price, Cost Price, Marketplace Fees, GST on Sales, GST on Fees, Net Settlement Amount, Settlement Date, Quantity.{" "}
-            <a
-              className="gst-preview-toggle"
-              style={{ cursor: "pointer" }}
-              onClick={() => setShowPreview(!showPreview)}
-            >
-              {showPreview ? "Hide Supported Columns" : "Show Supported Columns"} <VscOpenPreview/>
+            Upload a <b>CSV or Excel (.xlsx)</b> with columns: Order ID, Product Name, Selling Price, Cost Price, Marketplace Fees, GST on Sales, GST on Fees, Net Settlement Amount, Settlement Date, Quantity, Return Amount.
+            <a className="gst-preview-toggle" style={{ cursor: "pointer" }} onClick={() => setShowPreview(!showPreview)}>
+              {showPreview ? "Hide Supported Columns" : "Show Supported Columns"} <VscOpenPreview />
             </a>
           </p>
           {showPreview && (
@@ -214,26 +299,23 @@ const UploadReport = () => {
             </div>
           )}
         </div>
-        <select
-          className="gst-select"
-          value={marketplace}
-          onChange={(e) => setMarketplace(e.target.value)}
-        >
+        <select className="gst-select" value={marketplace} onChange={(e) => setMarketplace(e.target.value)}>
           <option value="generic">Generic</option>
           <option value="amazon">Amazon</option>
           <option value="flipkart">Flipkart</option>
         </select>
-        <div className="gst-file-input-container"
-        style={{
-          border: "2px dashed #cbd5e1",
-          borderRadius: "8px",
-          padding: "2rem",
-          textAlign: "center",
-          background: "#f1f5f9",
-          cursor: "pointer",
-          transition: "border-color 0.3s ease, background-color 0.3s ease",
-        }}
-        onClick={() => fileInputRef.current.click()}
+        <div
+          className="gst-file-input-container"
+          style={{
+            border: "2px dashed #cbd5e1",
+            borderRadius: "8px",
+            padding: "2rem",
+            textAlign: "center",
+            background: "#f1f5f9",
+            cursor: "pointer",
+            transition: "border-color 0.3s ease, background-color 0.3s ease",
+          }}
+          onClick={() => fileInputRef.current.click()}
         >
           <input
             type="file"
@@ -246,72 +328,126 @@ const UploadReport = () => {
           />
           <FiUpload size={40} color="#3b82f6" />
           <p style={{ margin: "0.5rem 0", fontWeight: "600" }}>
-           {file ? file.name : "Choose a File"}
+            {file ? file.name : "Choose a File"}
           </p>
         </div>
+        {fileHeaders.length > 0 && (
+          <div className="column-mapping">
+            <h4>Map Columns</h4>
+            {Object.keys(columnMapping).map((key) => (
+              <div key={key} style={{ marginBottom: "0.5rem" }}>
+                <label>{key}</label>
+                <select name={key} value={columnMapping[key]} onChange={handleColumnMappingChange}>
+                  <option value="">Select Column</option>
+                  {fileHeaders.map((header) => (
+                    <option key={header} value={header}>{header}</option>
+                  ))}
+                </select>
+              </div>
+            ))}
+          </div>
+        )}
+        <button className="gst-button" onClick={handlePreview}>
+          <VscOpenPreview /> Preview File
+        </button>
+        {showFilePreview && previewData.length > 0 && (
+          <div className="gst-preview-table-container">
+            <h4>File Preview</h4>
+            <table className="gst-preview-table">
+              <thead>
+                <tr>
+                  {fileHeaders.map((header) => (
+                    <th key={header}>{header}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {previewData.map((row, index) => (
+                  <tr key={index}>
+                    {fileHeaders.map((header) => (
+                      <td key={header}>{row[fileHeaders.indexOf(header)] || ""}</td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
         <button className="gst-button" onClick={handleUpload}>
           <FaFileUpload /> Upload & Process
         </button>
-        {uploadResult && (
-          <div>
-            <h4 className="gst-title">Summary for {uploadResult.report.filename}</h4>
-            <ul className="gst-summary-list">
-              <li>Total Sales: ₹{uploadResult.summary.totalSales.toFixed(2)}</li>
-              <li>Output GST: ₹{uploadResult.summary.outputGST.toFixed(2)}</li>
-              <li>Input GST (ITC): ₹{uploadResult.summary.inputGST.toFixed(2)}</li>
-              <li>Net GST Liability: ₹{uploadResult.summary.netGST.toFixed(2)}</li>
-              <li>Marketplace Fees: ₹{uploadResult.summary.totalFees.toFixed(2)}</li>
-              <li>Total Gross Profit: ₹{uploadResult.summary.totalGrossProfit.toFixed(2)}</li>
-              <li>Total Net Profit: ₹{uploadResult.summary.totalNetProfit.toFixed(2)}</li>
-            </ul>
-            <button className="gst-button" onClick={handleDownload}>
-              <FaDownload /> Download This Report
-            </button>
-            <button className="gst-button" onClick={handleSave}>
-              <FaSave /> Save to History
-            </button>
-          </div>
-        )}
       </div>
 
-      {/* Plans Modal */}
+      {/* Separate Summary Card displayed only when uploadResult exists */}
+      {uploadResult && (
+        <div className="gst-card">
+          <h4 className="gst-title">Summary for {uploadResult.report.filename}</h4>
+          <ul className="gst-summary-list">
+            <li>Total Sales: ₹{uploadResult.summary.totalSales.toFixed(2)}</li>
+            <li>Output GST: ₹{uploadResult.summary.outputGST.toFixed(2)}</li>
+            <li>Input GST (ITC): ₹{uploadResult.summary.inputGST.toFixed(2)}</li>
+            <li>Net GST Liability: ₹{uploadResult.summary.netGST.toFixed(2)}</li>
+            <li>Marketplace Fees: ₹{uploadResult.summary.totalFees.toFixed(2)}</li>
+            <li>Total Gross Profit: ₹{uploadResult.summary.totalGrossProfit.toFixed(2)}</li>
+            <li>Total Net Profit: ₹{uploadResult.summary.totalNetProfit.toFixed(2)}</li>
+            <li>Total Returns: ₹{uploadResult.summary.totalReturns.toFixed(2)}</li>
+          </ul>
+          <button className="gst-button" onClick={handleDownload}>
+            <FaDownload /> Download This Report
+          </button>
+          <button className="gst-button" onClick={handleSave}>
+            <FaSave /> Save to History
+          </button>
+        </div>
+      )}
+
+      {/* Plans Modal (unchanged) */}
       {showPlansModal && (
-        <div className="modal-overlay" style={{
-          position: "fixed",
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          backgroundColor: "rgba(0, 0, 0, 0.5)",
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
-          zIndex: 1000,
-        }}>
-          <div className="modal-content" style={{
-            backgroundColor: "#fff",
-            padding: "2rem",
-            borderRadius: "8px",
-            width: "80%",
-            maxWidth: "600px",
-            maxHeight: "80vh",
-            overflowY: "auto",
-            boxShadow: "0 4px 8px rgba(0, 0, 0, 0.2)",
-          }}>
+        <div
+          className="modal-overlay"
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: "rgba(0, 0, 0, 0.5)",
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            zIndex: 1000,
+          }}
+        >
+          <div
+            className="modal-content"
+            style={{
+              backgroundColor: "#fff",
+              padding: "2rem",
+              borderRadius: "8px",
+              width: "80%",
+              maxWidth: "600px",
+              maxHeight: "80vh",
+              overflowY: "auto",
+              boxShadow: "0 4px 8px rgba(0, 0, 0, 0.2)",
+            }}
+          >
             <h2 style={{ marginBottom: "1rem" }}>Upgrade Your Plan</h2>
             <p style={{ marginBottom: "1.5rem" }}>
               The GST Settlement module requires an All Access Monthly or Annual plan. Choose a plan to unlock unlimited access to all modules.
             </p>
             <div style={{ display: "flex", gap: "1rem", flexWrap: "wrap" }}>
               {premiumPlans.map((plan) => (
-                <div key={plan.id} style={{
-                  flex: "1",
-                  minWidth: "200px",
-                  padding: "1rem",
-                  border: "1px solid #ddd",
-                  borderRadius: "8px",
-                  textAlign: "center",
-                }}>
+                <div
+                  key={plan.id}
+                  style={{
+                    flex: "1",
+                    minWidth: "200px",
+                    padding: "1rem",
+                    border: "1px solid #ddd",
+                    borderRadius: "8px",
+                    textAlign: "center",
+                  }}
+                >
                   <h3>{plan.name}</h3>
                   <p>₹{plan.price} / {plan.duration}</p>
                   <p>Unlimited access to all modules including GST Settlement</p>

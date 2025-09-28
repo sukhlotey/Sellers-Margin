@@ -4,9 +4,7 @@ import UploadReport from "../modules/GstReconciliation/UploadReport";
 import GstSummary from "../modules/GstReconciliation/GstSummary";
 import GstDownload from "../modules/GstReconciliation/GstDownload";
 import GstHistory from "../modules/GstReconciliation/GstHistory"; // New component for reports list
-
 import { MdOutlineKeyboardBackspace } from "react-icons/md";
-import { MdPlaylistAddCheck, MdPlaylistRemove } from "react-icons/md";
 
 import "../pages/pagesUI/ProfitFee.css"; // reuse same styles
 
@@ -88,7 +86,6 @@ const GstSettlementPage = () => {
                 <div className="calculator-column">
                   <UploadReport />
                   <GstSummary />
-                  <GstDownload />
                 </div>
                 <div className="history-column">
                   {/* <button

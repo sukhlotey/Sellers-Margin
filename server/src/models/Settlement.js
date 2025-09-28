@@ -29,6 +29,7 @@ const settlementSchema = new mongoose.Schema(
     isBulk: { type: Boolean, default: false },
     filename: { type: String }, // name of the uploaded file
     rawRow: { type: Object, select: false }, // minimal store of original parsed row for debugging
+    returnAmount: { type: Number, default: 0 }, // amount refunded for returns
   },
   { timestamps: true }
 );

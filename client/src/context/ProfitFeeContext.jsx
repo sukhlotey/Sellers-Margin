@@ -12,9 +12,12 @@ export const ProfitFeeProvider = ({ children }) => {
   const deleteFromBulkHistory = (batchIds) => {
     setBulkHistory((prev) => prev.filter((batch) => !batchIds.includes(batch._id)));
   };
+    const deleteFromHistory = (recordIds) => {
+    setHistory((prev) => prev.filter((record) => !recordIds.includes(record._id)));
+  };
   return (
     <ProfitFeeContext.Provider
-      value={{ history, setHistory, addToHistory, bulkHistory, setBulkHistory, deleteFromBulkHistory }}
+      value={{ history, setHistory, addToHistory, bulkHistory, setBulkHistory, deleteFromBulkHistory, deleteFromHistory }}
     >
       {children}
     </ProfitFeeContext.Provider>

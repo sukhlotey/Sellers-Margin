@@ -5,6 +5,8 @@ import {
   getBulkDetails,
   getGSTSummary,
   uploadMiddleware,
+  deleteMultipleReports,
+  deleteReport,
 } from "../controllers/gstController.js";
 import { protect } from "../middleware/authMiddleware.js";
 
@@ -19,5 +21,8 @@ router.get("/bulk/:batchId", protect, getBulkDetails);
 
 // summary
 router.get("/summary", protect, getGSTSummary);
+router.delete("/bulk/:batchId", protect, deleteReport);
 
+// Delete multiple reports by batchIds
+router.delete("/bulk", protect, deleteMultipleReports);
 export default router;

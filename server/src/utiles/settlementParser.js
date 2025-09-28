@@ -1,9 +1,6 @@
 import { parse } from "csv-parse/sync";
 import * as XLSX from "xlsx";
 
-/**
- * Column mapping dictionary for marketplace-specific column names
- */
 const columnMap = {
   orderId: [
     "order-id",
@@ -77,6 +74,7 @@ const columnMap = {
     "closing-fee",
     "Other Fee",
     "Cancellation Fee",
+    "collection-fee",
   ],
   gstCollected: [
     "tax",
@@ -105,6 +103,12 @@ const columnMap = {
     "net-payout",
     "amount-paid",
     "Settlement Value (Rs)",
+  ],
+  returnAmount: [
+    "return-amount",
+    "refund",
+    "return-value",
+    "Return Amount",
   ],
 };
 
@@ -151,27 +155,48 @@ export function parseExcelBuffer(buffer) {
  * parseSettlementFile -> parses CSV or Excel file
  * @param {Buffer} buffer
  * @param {string} marketplace
+ * @param {Object} columnMapping
  * @returns {Array<Object>}
  */
-export function parseSettlementFile(buffer, marketplace = "generic") {
-  let rows;
-  try {
-    if (buffer.slice(0, 4).toString("hex") === "504b0304") {
-      rows = parseExcelBuffer(buffer);
-    } else {
-      rows = parseCSVBuffer(buffer);
+  export function parseSettlementFile(buffer, marketplace = "generic", columnMapping = {}) {
+    let rows;
+    try {
+      if (buffer.slice(0, 4).toString("hex") === "504b0304") {
+        rows = parseExcelBuffer(buffer);
+      } else {
+        rows = parseCSVBuffer(buffer);
+      }
+      console.log("Parsed rows:", rows);
+    } catch (error) {
+      console.error("parseSettlementFile error:", error.message);
+      throw error;
     }
-    console.log("Parsed rows:", rows);
-  } catch (error) {
-    console.error("parseSettlementFile error:", error.message);
-    throw error;
-  }
 
-  const parser = marketplaceParsers[marketplace] || marketplaceParsers.generic;
-  const canonical = parser(rows);
-  console.log("Canonical data:", canonical);
-  return canonical;
-}
+    // Validate required columns
+    const requiredColumns = marketplace === "generic" 
+      ? ["orderId", "grossAmount"]
+      : ["settlementId", "orderId", "grossAmount", "gstCollected"];
+    const headers = Object.keys(rows[0] || {});
+    const missingColumns = requiredColumns.filter(col => 
+      !headers.some(h => columnMap[col]?.includes(h) || columnMapping[col] === h)
+    );
+    if (missingColumns.length > 0) {
+      throw new Error(`Missing required columns: ${missingColumns.join(", ")}`);
+    }
+
+    // Check for marketplace mismatch with user-friendly error message
+    if (marketplace === "amazon" && headers.includes("collection-fee") && !headers.includes("closing-fee")) {
+      throw new Error("Incorrect platform selected. Please choose the correct platform (Flipkart) for the uploaded file.");
+    }
+    if (marketplace === "flipkart" && headers.includes("closing-fee") && !headers.includes("collection-fee")) {
+      throw new Error("Incorrect platform selected. Please choose the correct platform (Amazon) for the uploaded file.");
+    }
+
+    const parser = marketplaceParsers[marketplace] || marketplaceParsers.generic;
+    const canonical = parser(rows, columnMapping);
+    console.log("Canonical data:", canonical);
+    return canonical;
+  }
 
 /**
  * parseNumberSafe -> safely converts a value to a number
@@ -195,12 +220,14 @@ function normalizeColumnName(col) {
 }
 
 /**
- * getColumnKey -> finds the matching column name from columnMap
+ * getColumnKey -> finds the matching column name from columnMap or columnMapping
  * @param {Object} keys - normalized column keys
  * @param {string} field - internal field name
+ * @param {Object} columnMapping - user-defined column mappings
  * @returns {string|null} - matching column name or null
  */
-function getColumnKey(keys, field) {
+function getColumnKey(keys, field, columnMapping) {
+  if (columnMapping[field]) return columnMapping[field];
   const possibleNames = columnMap[field] || [];
   for (const name of possibleNames) {
     const normalizedName = normalizeColumnName(name);
@@ -212,7 +239,7 @@ function getColumnKey(keys, field) {
 }
 
 export const marketplaceParsers = {
-  amazon: (rows) => {
+  amazon: (rows, columnMapping) => {
     return rows.map((r) => {
       const keys = Object.keys(r).reduce((acc, key) => {
         acc[normalizeColumnName(key)] = key;
@@ -220,38 +247,38 @@ export const marketplaceParsers = {
       }, {});
       console.log("Amazon parser keys:", keys);
 
-      // Log unmapped columns for debugging
-      const unmappedKeys = Object.keys(r).filter(key => !Object.values(keys).includes(key));
-      if (unmappedKeys.length > 0) {
-        console.warn("Unmapped columns in Amazon parser:", unmappedKeys);
-      }
+      const orderId = getColumnKey(keys, "orderId", columnMapping) ? r[getColumnKey(keys, "orderId", columnMapping)] : null;
+      const productName = getColumnKey(keys, "productName", columnMapping) ? r[getColumnKey(keys, "productName", columnMapping)] : null;
+      const settlementId = getColumnKey(keys, "settlementId", columnMapping) ? r[getColumnKey(keys, "settlementId", columnMapping)] : null;
+      const orderDate = getColumnKey(keys, "orderDate", columnMapping) ? r[getColumnKey(keys, "orderDate", columnMapping)] : null;
+      const quantity = parseNumberSafe(getColumnKey(keys, "quantity", columnMapping) ? r[getColumnKey(keys, "quantity", columnMapping)] : 1);
+      const grossAmount = parseNumberSafe(getColumnKey(keys, "grossAmount", columnMapping) ? r[getColumnKey(keys, "grossAmount", columnMapping)] : 0);
+      const costPrice = parseNumberSafe(getColumnKey(keys, "costPrice", columnMapping) ? r[getColumnKey(keys, "costPrice", columnMapping)] : 0);
+      const commission = parseNumberSafe(getColumnKey(keys, "commission", columnMapping) ? r[getColumnKey(keys, "commission", columnMapping)] : (grossAmount * 0.15));
+      const shippingFee = parseNumberSafe(getColumnKey(keys, "shippingFee", columnMapping) ? r[getColumnKey(keys, "shippingFee", columnMapping)] : 0);
+      const otherFee = parseNumberSafe(getColumnKey(keys, "otherFee", columnMapping) ? r[getColumnKey(keys, "otherFee", columnMapping)] : (grossAmount < 300 ? 10 : grossAmount <= 500 ? 15 : 45));
+      const gstCollected = parseNumberSafe(getColumnKey(keys, "gstCollected", columnMapping) ? r[getColumnKey(keys, "gstCollected", columnMapping)] : (grossAmount * 0.18));
+      const gstOnFees = parseNumberSafe(getColumnKey(keys, "gstOnFees", columnMapping) ? r[getColumnKey(keys, "gstOnFees", columnMapping)] : ((commission + shippingFee + otherFee) * 0.18));
+      const netPayout = parseNumberSafe(getColumnKey(keys, "netPayout", columnMapping) ? r[getColumnKey(keys, "netPayout", columnMapping)] : (grossAmount - (commission + shippingFee + otherFee + gstOnFees)));
+      const returnAmount = parseNumberSafe(getColumnKey(keys, "returnAmount", columnMapping) ? r[getColumnKey(keys, "returnAmount", columnMapping)] : 0);
 
-      const orderId = getColumnKey(keys, "orderId") ? r[getColumnKey(keys, "orderId")] : null;
-      const productName = getColumnKey(keys, "productName") ? r[getColumnKey(keys, "productName")] : null;
-      const settlementId = getColumnKey(keys, "settlementId") ? r[getColumnKey(keys, "settlementId")] : null;
-      const orderDate = getColumnKey(keys, "orderDate") ? r[getColumnKey(keys, "orderDate")] : null;
-      const quantity = parseNumberSafe(getColumnKey(keys, "quantity") ? r[getColumnKey(keys, "quantity")] : 1);
-      const grossAmount = parseNumberSafe(getColumnKey(keys, "grossAmount") ? r[getColumnKey(keys, "grossAmount")] : 0);
-      const costPrice = parseNumberSafe(getColumnKey(keys, "costPrice") ? r[getColumnKey(keys, "costPrice")] : 0);
-      const commission = parseNumberSafe(getColumnKey(keys, "commission") ? r[getColumnKey(keys, "commission")] : 0);
-      const shippingFee = parseNumberSafe(getColumnKey(keys, "shippingFee") ? r[getColumnKey(keys, "shippingFee")] : 0);
-      const otherFee = parseNumberSafe(getColumnKey(keys, "otherFee") ? r[getColumnKey(keys, "otherFee")] : 0);
-      const gstCollected = parseNumberSafe(getColumnKey(keys, "gstCollected") ? r[getColumnKey(keys, "gstCollected")] : 0);
-      const gstOnFees = parseNumberSafe(getColumnKey(keys, "gstOnFees") ? r[getColumnKey(keys, "gstOnFees")] : 0);
-      const netPayout = parseNumberSafe(getColumnKey(keys, "netPayout") ? r[getColumnKey(keys, "netPayout")] : 0);
+      // Adjust for returns
+      const adjustedGrossAmount = grossAmount - returnAmount;
+      const adjustedGstCollected = getColumnKey(keys, "gstCollected", columnMapping) ? gstCollected : (adjustedGrossAmount * 0.18);
+      const adjustedNetPayout = getColumnKey(keys, "netPayout", columnMapping) ? netPayout : (adjustedGrossAmount - (commission + shippingFee + otherFee + gstOnFees));
 
       // Calculate profitability
-      const grossProfit = grossAmount - costPrice;
-      const netProfit = netPayout - costPrice;
-      const margin = grossAmount > 0 ? (netProfit / grossAmount) * 100 : 0;
+      const grossProfit = adjustedGrossAmount - costPrice;
+      const netProfit = adjustedNetPayout - costPrice;
+      const margin = adjustedGrossAmount > 0 ? (netProfit / adjustedGrossAmount) * 100 : 0;
 
-      // Basic reconciliation check
-      const expectedPayout = grossAmount - (commission + shippingFee + otherFee) + gstCollected - gstOnFees;
+      // Reconciliation check
+      const expectedPayout = adjustedGrossAmount - (commission + shippingFee + otherFee + gstOnFees);
       let reconciliationStatus = "Matched";
       let reconciliationNotes = "";
-      if (Math.abs(netPayout - expectedPayout) > 0.01) {
+      if (Math.abs(adjustedNetPayout - expectedPayout) > 0.01) {
         reconciliationStatus = "Short Paid";
-        reconciliationNotes = `Expected payout: ${expectedPayout.toFixed(2)}, Actual: ${netPayout.toFixed(2)}`;
+        reconciliationNotes = `Expected payout: ${expectedPayout.toFixed(2)}, Actual: ${adjustedNetPayout.toFixed(2)}`;
       }
       if (!orderId) {
         reconciliationStatus = "Missing";
@@ -264,23 +291,24 @@ export const marketplaceParsers = {
         settlementId,
         orderDate: orderDate ? new Date(orderDate) : null,
         quantity,
-        grossAmount,
+        grossAmount: adjustedGrossAmount,
         costPrice,
         feesBreakdown: { commission, shippingFee, otherFee },
-        gstCollected,
+        gstCollected: adjustedGstCollected,
         gstOnFees,
-        netPayout,
+        netPayout: adjustedNetPayout,
         grossProfit,
         netProfit,
         margin,
         reconciliationStatus,
         reconciliationNotes,
         rawRow: r,
+        returnAmount,
       };
     });
   },
 
-  flipkart: (rows) => {
+  flipkart: (rows, columnMapping) => {
     return rows.map((r) => {
       const keys = Object.keys(r).reduce((acc, key) => {
         acc[normalizeColumnName(key)] = key;
@@ -288,38 +316,38 @@ export const marketplaceParsers = {
       }, {});
       console.log("Flipkart parser keys:", keys);
 
-      // Log unmapped columns for debugging
-      const unmappedKeys = Object.keys(r).filter(key => !Object.values(keys).includes(key));
-      if (unmappedKeys.length > 0) {
-        console.warn("Unmapped columns in Flipkart parser:", unmappedKeys);
-      }
+      const orderId = getColumnKey(keys, "orderId", columnMapping) ? r[getColumnKey(keys, "orderId", columnMapping)] : null;
+      const productName = getColumnKey(keys, "productName", columnMapping) ? r[getColumnKey(keys, "productName", columnMapping)] : null;
+      const settlementId = getColumnKey(keys, "settlementId", columnMapping) ? r[getColumnKey(keys, "settlementId", columnMapping)] : null;
+      const orderDate = getColumnKey(keys, "orderDate", columnMapping) ? r[getColumnKey(keys, "orderDate", columnMapping)] : null;
+      const quantity = parseNumberSafe(getColumnKey(keys, "quantity", columnMapping) ? r[getColumnKey(keys, "quantity", columnMapping)] : 1);
+      const grossAmount = parseNumberSafe(getColumnKey(keys, "grossAmount", columnMapping) ? r[getColumnKey(keys, "grossAmount", columnMapping)] : 0);
+      const costPrice = parseNumberSafe(getColumnKey(keys, "costPrice", columnMapping) ? r[getColumnKey(keys, "costPrice", columnMapping)] : 0);
+      const commission = parseNumberSafe(getColumnKey(keys, "commission", columnMapping) ? r[getColumnKey(keys, "commission", columnMapping)] : (grossAmount * 0.15));
+      const shippingFee = parseNumberSafe(getColumnKey(keys, "shippingFee", columnMapping) ? r[getColumnKey(keys, "shippingFee", columnMapping)] : 0);
+      const otherFee = parseNumberSafe(getColumnKey(keys, "otherFee", columnMapping) ? r[getColumnKey(keys, "otherFee", columnMapping)] : (grossAmount * 0.025));
+      const gstCollected = parseNumberSafe(getColumnKey(keys, "gstCollected", columnMapping) ? r[getColumnKey(keys, "gstCollected", columnMapping)] : (grossAmount * 0.18));
+      const gstOnFees = parseNumberSafe(getColumnKey(keys, "gstOnFees", columnMapping) ? r[getColumnKey(keys, "gstOnFees", columnMapping)] : ((commission + shippingFee + otherFee) * 0.18));
+      const netPayout = parseNumberSafe(getColumnKey(keys, "netPayout", columnMapping) ? r[getColumnKey(keys, "netPayout", columnMapping)] : (grossAmount - (commission + shippingFee + otherFee + gstOnFees)));
+      const returnAmount = parseNumberSafe(getColumnKey(keys, "returnAmount", columnMapping) ? r[getColumnKey(keys, "returnAmount", columnMapping)] : 0);
 
-      const orderId = getColumnKey(keys, "orderId") ? r[getColumnKey(keys, "orderId")] : null;
-      const productName = getColumnKey(keys, "productName") ? r[getColumnKey(keys, "productName")] : null;
-      const settlementId = getColumnKey(keys, "settlementId") ? r[getColumnKey(keys, "settlementId")] : null;
-      const orderDate = getColumnKey(keys, "orderDate") ? r[getColumnKey(keys, "orderDate")] : null;
-      const quantity = parseNumberSafe(getColumnKey(keys, "quantity") ? r[getColumnKey(keys, "quantity")] : 1);
-      const grossAmount = parseNumberSafe(getColumnKey(keys, "grossAmount") ? r[getColumnKey(keys, "grossAmount")] : 0);
-      const costPrice = parseNumberSafe(getColumnKey(keys, "costPrice") ? r[getColumnKey(keys, "costPrice")] : 0);
-      const commission = parseNumberSafe(getColumnKey(keys, "commission") ? r[getColumnKey(keys, "commission")] : 0);
-      const shippingFee = parseNumberSafe(getColumnKey(keys, "shippingFee") ? r[getColumnKey(keys, "shippingFee")] : 0);
-      const otherFee = parseNumberSafe(getColumnKey(keys, "otherFee") ? r[getColumnKey(keys, "otherFee")] : 0);
-      const gstCollected = parseNumberSafe(getColumnKey(keys, "gstCollected") ? r[getColumnKey(keys, "gstCollected")] : 0);
-      const gstOnFees = parseNumberSafe(getColumnKey(keys, "gstOnFees") ? r[getColumnKey(keys, "gstOnFees")] : 0);
-      const netPayout = parseNumberSafe(getColumnKey(keys, "netPayout") ? r[getColumnKey(keys, "netPayout")] : 0);
+      // Adjust for returns
+      const adjustedGrossAmount = grossAmount - returnAmount;
+      const adjustedGstCollected = getColumnKey(keys, "gstCollected", columnMapping) ? gstCollected : (adjustedGrossAmount * 0.18);
+      const adjustedNetPayout = getColumnKey(keys, "netPayout", columnMapping) ? netPayout : (adjustedGrossAmount - (commission + shippingFee + otherFee + gstOnFees));
 
       // Calculate profitability
-      const grossProfit = grossAmount - costPrice;
-      const netProfit = netPayout - costPrice;
-      const margin = grossAmount > 0 ? (netProfit / grossAmount) * 100 : 0;
+      const grossProfit = adjustedGrossAmount - costPrice;
+      const netProfit = adjustedNetPayout - costPrice;
+      const margin = adjustedGrossAmount > 0 ? (netProfit / adjustedGrossAmount) * 100 : 0;
 
-      // Basic reconciliation check
-      const expectedPayout = grossAmount - (commission + shippingFee + otherFee) + gstCollected - gstOnFees;
+      // Reconciliation check
+      const expectedPayout = adjustedGrossAmount - (commission + shippingFee + otherFee + gstOnFees);
       let reconciliationStatus = "Matched";
       let reconciliationNotes = "";
-      if (Math.abs(netPayout - expectedPayout) > 0.01) {
+      if (Math.abs(adjustedNetPayout - expectedPayout) > 0.01) {
         reconciliationStatus = "Short Paid";
-        reconciliationNotes = `Expected payout: ${expectedPayout.toFixed(2)}, Actual: ${netPayout.toFixed(2)}`;
+        reconciliationNotes = `Expected payout: ${expectedPayout.toFixed(2)}, Actual: ${adjustedNetPayout.toFixed(2)}`;
       }
       if (!orderId) {
         reconciliationStatus = "Missing";
@@ -332,23 +360,24 @@ export const marketplaceParsers = {
         settlementId,
         orderDate: orderDate ? new Date(orderDate) : null,
         quantity,
-        grossAmount,
+        grossAmount: adjustedGrossAmount,
         costPrice,
         feesBreakdown: { commission, shippingFee, otherFee },
-        gstCollected,
+        gstCollected: adjustedGstCollected,
         gstOnFees,
-        netPayout,
+        netPayout: adjustedNetPayout,
         grossProfit,
         netProfit,
         margin,
         reconciliationStatus,
         reconciliationNotes,
         rawRow: r,
+        returnAmount,
       };
     });
   },
 
-  generic: (rows) => {
+  generic: (rows, columnMapping) => {
     return rows.map((r) => {
       const keys = Object.keys(r).reduce((acc, key) => {
         acc[normalizeColumnName(key)] = key;
@@ -356,38 +385,38 @@ export const marketplaceParsers = {
       }, {});
       console.log("Generic parser keys:", keys);
 
-      // Log unmapped columns for debugging
-      const unmappedKeys = Object.keys(r).filter(key => !Object.values(keys).includes(key));
-      if (unmappedKeys.length > 0) {
-        console.warn("Unmapped columns in Generic parser:", unmappedKeys);
-      }
+      const orderId = getColumnKey(keys, "orderId", columnMapping) ? r[getColumnKey(keys, "orderId", columnMapping)] : null;
+      const productName = getColumnKey(keys, "productName", columnMapping) ? r[getColumnKey(keys, "productName", columnMapping)] : null;
+      const settlementId = getColumnKey(keys, "settlementId", columnMapping) ? r[getColumnKey(keys, "settlementId", columnMapping)] : null;
+      const orderDate = getColumnKey(keys, "orderDate", columnMapping) ? r[getColumnKey(keys, "orderDate", columnMapping)] : null;
+      const quantity = parseNumberSafe(getColumnKey(keys, "quantity", columnMapping) ? r[getColumnKey(keys, "quantity", columnMapping)] : 1);
+      const grossAmount = parseNumberSafe(getColumnKey(keys, "grossAmount", columnMapping) ? r[getColumnKey(keys, "grossAmount", columnMapping)] : 0);
+      const costPrice = parseNumberSafe(getColumnKey(keys, "costPrice", columnMapping) ? r[getColumnKey(keys, "costPrice", columnMapping)] : 0);
+      const commission = parseNumberSafe(getColumnKey(keys, "commission", columnMapping) ? r[getColumnKey(keys, "commission", columnMapping)] : 0);
+      const shippingFee = parseNumberSafe(getColumnKey(keys, "shippingFee", columnMapping) ? r[getColumnKey(keys, "shippingFee", columnMapping)] : 0);
+      const otherFee = parseNumberSafe(getColumnKey(keys, "otherFee", columnMapping) ? r[getColumnKey(keys, "otherFee", columnMapping)] : 0);
+      const gstCollected = parseNumberSafe(getColumnKey(keys, "gstCollected", columnMapping) ? r[getColumnKey(keys, "gstCollected", columnMapping)] : (grossAmount * 0.18));
+      const gstOnFees = parseNumberSafe(getColumnKey(keys, "gstOnFees", columnMapping) ? r[getColumnKey(keys, "gstOnFees", columnMapping)] : ((commission + shippingFee + otherFee) * 0.18));
+      const netPayout = parseNumberSafe(getColumnKey(keys, "netPayout", columnMapping) ? r[getColumnKey(keys, "netPayout", columnMapping)] : (grossAmount - (commission + shippingFee + otherFee + gstOnFees)));
+      const returnAmount = parseNumberSafe(getColumnKey(keys, "returnAmount", columnMapping) ? r[getColumnKey(keys, "returnAmount", columnMapping)] : 0);
 
-      const orderId = getColumnKey(keys, "orderId") ? r[getColumnKey(keys, "orderId")] : null;
-      const productName = getColumnKey(keys, "productName") ? r[getColumnKey(keys, "productName")] : null;
-      const settlementId = getColumnKey(keys, "settlementId") ? r[getColumnKey(keys, "settlementId")] : null;
-      const orderDate = getColumnKey(keys, "orderDate") ? r[getColumnKey(keys, "orderDate")] : null;
-      const quantity = parseNumberSafe(getColumnKey(keys, "quantity") ? r[getColumnKey(keys, "quantity")] : 1);
-      const grossAmount = parseNumberSafe(getColumnKey(keys, "grossAmount") ? r[getColumnKey(keys, "grossAmount")] : 0);
-      const costPrice = parseNumberSafe(getColumnKey(keys, "costPrice") ? r[getColumnKey(keys, "costPrice")] : 0);
-      const commission = parseNumberSafe(getColumnKey(keys, "commission") ? r[getColumnKey(keys, "commission")] : 0);
-      const shippingFee = parseNumberSafe(getColumnKey(keys, "shippingFee") ? r[getColumnKey(keys, "shippingFee")] : 0);
-      const otherFee = parseNumberSafe(getColumnKey(keys, "otherFee") ? r[getColumnKey(keys, "otherFee")] : 0);
-      const gstCollected = parseNumberSafe(getColumnKey(keys, "gstCollected") ? r[getColumnKey(keys, "gstCollected")] : 0);
-      const gstOnFees = parseNumberSafe(getColumnKey(keys, "gstOnFees") ? r[getColumnKey(keys, "gstOnFees")] : 0);
-      const netPayout = parseNumberSafe(getColumnKey(keys, "netPayout") ? r[getColumnKey(keys, "netPayout")] : 0);
+      // Adjust for returns
+      const adjustedGrossAmount = grossAmount - returnAmount;
+      const adjustedGstCollected = getColumnKey(keys, "gstCollected", columnMapping) ? gstCollected : (adjustedGrossAmount * 0.18);
+      const adjustedNetPayout = getColumnKey(keys, "netPayout", columnMapping) ? netPayout : (adjustedGrossAmount - (commission + shippingFee + otherFee + gstOnFees));
 
       // Calculate profitability
-      const grossProfit = grossAmount - costPrice;
-      const netProfit = netPayout - costPrice;
-      const margin = grossAmount > 0 ? (netProfit / grossAmount) * 100 : 0;
+      const grossProfit = adjustedGrossAmount - costPrice;
+      const netProfit = adjustedNetPayout - costPrice;
+      const margin = adjustedGrossAmount > 0 ? (netProfit / adjustedGrossAmount) * 100 : 0;
 
-      // Basic reconciliation check
-      const expectedPayout = grossAmount - (commission + shippingFee + otherFee) + gstCollected - gstOnFees;
+      // Reconciliation check
+      const expectedPayout = adjustedGrossAmount - (commission + shippingFee + otherFee + gstOnFees);
       let reconciliationStatus = "Matched";
       let reconciliationNotes = "";
-      if (Math.abs(netPayout - expectedPayout) > 0.01) {
+      if (Math.abs(adjustedNetPayout - expectedPayout) > 0.01) {
         reconciliationStatus = "Short Paid";
-        reconciliationNotes = `Expected payout: ${expectedPayout.toFixed(2)}, Actual: ${netPayout.toFixed(2)}`;
+        reconciliationNotes = `Expected payout: ${expectedPayout.toFixed(2)}, Actual: ${adjustedNetPayout.toFixed(2)}`;
       }
       if (!orderId) {
         reconciliationStatus = "Missing";
@@ -400,18 +429,19 @@ export const marketplaceParsers = {
         settlementId,
         orderDate: orderDate ? new Date(orderDate) : null,
         quantity,
-        grossAmount,
+        grossAmount: adjustedGrossAmount,
         costPrice,
         feesBreakdown: { commission, shippingFee, otherFee },
-        gstCollected,
+        gstCollected: adjustedGstCollected,
         gstOnFees,
-        netPayout,
+        netPayout: adjustedNetPayout,
         grossProfit,
         netProfit,
         margin,
         reconciliationStatus,
         reconciliationNotes,
         rawRow: r,
+        returnAmount,
       };
     });
   },

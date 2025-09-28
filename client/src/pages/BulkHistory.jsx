@@ -155,7 +155,7 @@ const BulkHistory = () => {
             disabled={loading}
           >
             <FiTrash2 />
-            {showCheckboxes ? `Delete Selected (${selectedBatches.length})` : "Select"}
+            {showCheckboxes ? `Delete (${selectedBatches.length})` : "Select"}
           </button>
         </div>
       )}

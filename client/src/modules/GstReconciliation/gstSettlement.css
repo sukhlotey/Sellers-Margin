@@ -12,7 +12,7 @@
   border-radius: 12px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   padding: 20px;
-  /* margin-bottom: 20px; */
+  margin-bottom: 10px;
   transition: transform 0.3s ease, box-shadow 0.3s ease;
   animation: fadeIn 0.5s ease-in-out;
 }
@@ -50,8 +50,32 @@
   display: inline-flex;
   align-items: center;
   gap: 8px;
+  margin: 2px;
 }
-
+.gst-button-del{
+  background-color: #e11d48;
+  border: none;
+  border-radius: 5px;
+  padding: 8px;
+  display: inline-flex;
+  align-items: center;
+  gap: .5rem;
+  font-size: medium;
+  color: #fff;
+  transition: trasnform 0.2s ease, box-shadow 0.2s ease;
+}
+.gst-button-del-sel{
+  background-color: #e11d48;
+  border: none;
+  border-radius: 5px;
+  padding: 8px 10px;
+  display: inline-flex;
+  align-items: center;
+  gap: .5rem;
+  font-size: medium;
+  color: #fff;
+  transition: trasnform 0.2s ease, box-shadow 0.2s ease;
+}
 .gst-button:hover {
   background: #2a5db0;
   transform: scale(1.05);

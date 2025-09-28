@@ -18,3 +18,17 @@ export const fetchReports = async (token) => {
     headers: { Authorization: `Bearer ${token}` },
   });
 };
+
+export const deleteReport = async (batchId, token) => {
+  return await API.delete(`/gst/bulk/${batchId}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+};
+
+// Delete multiple reports by batchIds
+export const deleteMultipleReports = async (batchIds, token) => {
+  return await API.delete("/gst/bulk", {
+    headers: { Authorization: `Bearer ${token}` },
+    data: { batchIds },
+  });
+};

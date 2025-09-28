@@ -9,7 +9,7 @@ export const uploadMiddleware = multer({ storage });
 
 /**
  * POST /api/gst/upload
- * multipart/form-data: file, marketplace (string)
+ * multipart/form-data: file, marketplace (string), columnMapping (JSON string)
  */
 export const uploadSettlement = async (req, res) => {
   try {
@@ -17,9 +17,10 @@ export const uploadSettlement = async (req, res) => {
 
     const { buffer, originalname } = req.file;
     const marketplace = (req.body.marketplace || "generic").toLowerCase();
-    
+    const columnMapping = req.body.columnMapping ? JSON.parse(req.body.columnMapping) : {};
+
     // Parse CSV or Excel file
-    const canonical = parseSettlementFile(buffer, marketplace);
+    const canonical = parseSettlementFile(buffer, marketplace, columnMapping);
 
     if (!canonical || canonical.length === 0) {
       return res.status(400).json({ message: "No rows parsed from file" });
@@ -30,6 +31,13 @@ export const uploadSettlement = async (req, res) => {
     // Enrich and save
     const toInsert = canonical.map((r) => {
       console.log("Inserting record:", r); // Debug log
+      const grossAmount = r.grossAmount - (r.returnAmount || 0);
+      const gstCollected = r.gstCollected || (grossAmount * 0.18);
+      const netPayout = r.netPayout || (grossAmount - (r.feesBreakdown.commission + r.feesBreakdown.shippingFee + r.feesBreakdown.otherFee + r.gstOnFees));
+      const grossProfit = grossAmount - r.costPrice;
+      const netProfit = netPayout - r.costPrice;
+      const margin = grossAmount > 0 ? (netProfit / grossAmount) * 100 : 0;
+
       return {
         userId: req.user._id,
         marketplace,
@@ -38,15 +46,15 @@ export const uploadSettlement = async (req, res) => {
         productName: r.productName || null,
         orderDate: r.orderDate || null,
         quantity: r.quantity || 1,
-        grossAmount: r.grossAmount || 0,
+        grossAmount,
         costPrice: r.costPrice || 0,
         feesBreakdown: r.feesBreakdown || { commission: 0, shippingFee: 0, otherFee: 0 },
-        gstCollected: r.gstCollected || 0,
+        gstCollected,
         gstOnFees: r.gstOnFees || 0,
-        netPayout: r.netPayout || 0,
-        grossProfit: r.grossProfit || 0,
-        netProfit: r.netProfit || 0,
-        margin: r.margin || 0,
+        netPayout,
+        grossProfit,
+        netProfit,
+        margin,
         reconciliationStatus: r.reconciliationStatus || "Pending",
         reconciliationNotes: r.reconciliationNotes || "",
         currency: r.currency || "INR",
@@ -54,6 +62,7 @@ export const uploadSettlement = async (req, res) => {
         isBulk: true,
         filename: originalname,
         rawRow: r.rawRow || {},
+        returnAmount: r.returnAmount || 0,
       };
     });
 
@@ -93,13 +102,14 @@ async function getGSTSummaryForBatch(userId, batchId) {
     {
       $group: {
         _id: null,
-        totalSales: { $sum: { $multiply: ["$grossAmount", "$quantity"] } },
+        totalSales: { $sum: { $multiply: [{ $subtract: ["$grossAmount", "$returnAmount"] }, "$quantity"] } },
         outputGST: { $sum: { $multiply: ["$gstCollected", "$quantity"] } },
         inputGST: { $sum: { $multiply: ["$gstOnFees", "$quantity"] } },
         totalFees: { $sum: { $sum: ["$feesBreakdown.commission", "$feesBreakdown.shippingFee", "$feesBreakdown.otherFee"] } },
         totalNetPayout: { $sum: { $multiply: ["$netPayout", "$quantity"] } },
         totalGrossProfit: { $sum: { $multiply: ["$grossProfit", "$quantity"] } },
         totalNetProfit: { $sum: { $multiply: ["$netProfit", "$quantity"] } },
+        totalReturns: { $sum: { $multiply: ["$returnAmount", "$quantity"] } },
       },
     },
   ]);
@@ -112,6 +122,7 @@ async function getGSTSummaryForBatch(userId, batchId) {
     totalNetPayout: 0,
     totalGrossProfit: 0,
     totalNetProfit: 0,
+    totalReturns: 0,
   };
   summary.netGST = summary.outputGST - summary.inputGST;
   return summary;
@@ -189,13 +200,14 @@ export const getGSTSummary = async (req, res) => {
       {
         $group: {
           _id: null,
-          totalGross: { $sum: { $multiply: ["$grossAmount", "$quantity"] } },
+          totalGross: { $sum: { $multiply: [{ $subtract: ["$grossAmount", "$returnAmount"] }, "$quantity"] } },
           totalGSTCollected: { $sum: { $multiply: ["$gstCollected", "$quantity"] } },
           totalGSTOnFees: { $sum: { $multiply: ["$gstOnFees", "$quantity"] } },
           totalFees: { $sum: { $sum: ["$feesBreakdown.commission", "$feesBreakdown.shippingFee", "$feesBreakdown.otherFee"] } },
           totalNetPayout: { $sum: { $multiply: ["$netPayout", "$quantity"] } },
           totalGrossProfit: { $sum: { $multiply: ["$grossProfit", "$quantity"] } },
           totalNetProfit: { $sum: { $multiply: ["$netProfit", "$quantity"] } },
+          totalReturns: { $sum: { $multiply: ["$returnAmount", "$quantity"] } },
         },
       },
     ]);
@@ -208,6 +220,7 @@ export const getGSTSummary = async (req, res) => {
       totalNetPayout: 0,
       totalGrossProfit: 0,
       totalNetProfit: 0,
+      totalReturns: 0,
     };
 
     const gstLiability = summary.totalGSTCollected - summary.totalGSTOnFees;
@@ -216,5 +229,37 @@ export const getGSTSummary = async (req, res) => {
   } catch (error) {
     console.error("getGSTSummary error:", error);
     res.status(500).json({ message: "Error computing GST summary", error: error.message });
+  }
+};
+
+
+export const deleteReport = async (req, res) => {
+  try {
+    const { batchId } = req.params;
+    const deleted = await Settlement.deleteMany({ userId: req.user._id, batchId });
+    if (deleted.deletedCount === 0) {
+      return res.status(404).json({ message: "Report not found or already deleted" });
+    }
+    res.json({ message: "Report deleted successfully" });
+  } catch (error) {
+    console.error("deleteReport error:", error);
+    res.status(500).json({ message: "Error deleting report", error: error.message });
+  }
+};
+
+export const deleteMultipleReports = async (req, res) => {
+  try {
+    const { batchIds } = req.body;
+    if (!Array.isArray(batchIds) || batchIds.length === 0) {
+      return res.status(400).json({ message: "No batch IDs provided" });
+    }
+    const deleted = await Settlement.deleteMany({ userId: req.user._id, batchId: { $in: batchIds } });
+    if (deleted.deletedCount === 0) {
+      return res.status(404).json({ message: "No reports found or already deleted" });
+    }
+    res.json({ message: `${deleted.deletedCount} report(s) deleted successfully` });
+  } catch (error) {
+    console.error("deleteMultipleReports error:", error);
+    res.status(500).json({ message: "Error deleting reports", error: error.message });
   }
 };

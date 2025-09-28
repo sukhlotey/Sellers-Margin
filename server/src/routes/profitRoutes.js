@@ -1,7 +1,7 @@
 import express from "express";
 import { calculateProfit,calculateAndSaveProfit,getProfitHistory,bulkSaveProfit,getBulkHistory,
   getBulkDetails,deleteBulkBatch,
-  deleteMultipleBulkBatches } from "../controllers/profitController.js";
+  deleteMultipleBulkBatches, deleteMultipleProfitRecords,deleteProfitRecord } from "../controllers/profitController.js";
 import { protect } from "../middleware/authMiddleware.js";
 import { enforceFreeLimit } from "../middleware/subscriptionMiddleware.js";
 
@@ -16,4 +16,6 @@ router.get("/bulk/history", protect, getBulkHistory);
 router.get("/bulk/:batchId", protect, getBulkDetails);
 router.delete("/bulk/:batchId", protect, deleteBulkBatch);
 router.delete("/bulk", protect, deleteMultipleBulkBatches);
+router.delete("/:id", protect, deleteProfitRecord);
+router.delete("/", protect, deleteMultipleProfitRecords);
 export default router;
