@@ -161,10 +161,10 @@
     font-size: 1.5rem;
   }
 
-  .form-group input {
-    padding: 0.6rem 2.25rem 0.6rem 0.9rem; /* Adjusted for smaller screens */
+  /* .form-group input {
+    padding: 0.6rem 2.25rem 0.6rem 0.9rem; 
     font-size: 0.9rem;
-  }
+  } */
 
   .password-toggle {
     font-size: 1.1rem;

@@ -149,10 +149,10 @@ const BulkDetails = ({ batch, onBack }) => {
 
       <div className="bulk-actions">
         <button className="download-btn" onClick={downloadPDF}>
-          <FiDownload /> Download PDF
+          <FiDownload /> PDF
         </button>
         <button className="download-btn" onClick={downloadExcel}>
-          <FiDownload /> Download Excel
+          <FiDownload /> Excel
         </button>
       </div>
 

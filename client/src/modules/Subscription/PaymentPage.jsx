@@ -54,8 +54,9 @@ const PaymentPage = () => {
                 : "Annual",
             expiry: verifyResponse.data.subscription.endDate,
           });
-          showAlert("success", "Payment Successful! Subscription activated.");
           navigate("/subscription");
+          window.location.reload(); // Refresh page after navigation to fix scroll lock
+          showAlert("success", "Payment Successful! Subscription activated.");
         } catch (err) {
           console.error("Payment verification error:", err.response?.data || err.message);
           showAlert("error", err.response?.data?.message || "Payment verification failed. Please try again.");

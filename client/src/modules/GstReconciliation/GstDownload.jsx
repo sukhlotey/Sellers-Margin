@@ -130,9 +130,9 @@ const GstDownload = () => {
   return (
     <div className="gst-container">
       <div className="gst-card">
-        <h5 className="gst-title" >
-          <FaDownload /> Download All Reports
-        </h5>
+        <h4 className="gst-title" style={{fontSize:"16px"}} >
+      Download All Reports
+        </h4>
         <button style={{ fontSize: "14px" }} className="gst-button" onClick={downloadExcel}>
           <FaDownload /> Export All
         </button>

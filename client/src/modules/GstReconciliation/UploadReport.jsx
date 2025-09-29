@@ -275,7 +275,7 @@ const UploadReport = () => {
           <p>
             Upload a <b>CSV or Excel (.xlsx)</b> with columns: Order ID, Product Name, Selling Price, Cost Price, Marketplace Fees, GST on Sales, GST on Fees, Net Settlement Amount, Settlement Date, Quantity, Return Amount.
             <a className="gst-preview-toggle" style={{ cursor: "pointer" }} onClick={() => setShowPreview(!showPreview)}>
-              {showPreview ? "Hide Supported Columns" : "Show Supported Columns"} <VscOpenPreview />
+              {showPreview ? "Hide Supported Columns" : "Show Supported Columns"}
             </a>
           </p>
           {showPreview && (
@@ -378,7 +378,6 @@ const UploadReport = () => {
         </button>
       </div>
 
-      {/* Separate Summary Card displayed only when uploadResult exists */}
       {uploadResult && (
         <div className="gst-card">
           <h4 className="gst-title">Summary for {uploadResult.report.filename}</h4>
@@ -393,10 +392,10 @@ const UploadReport = () => {
             <li>Total Returns: ₹{uploadResult.summary.totalReturns.toFixed(2)}</li>
           </ul>
           <button className="gst-button" onClick={handleDownload}>
-            <FaDownload /> Download This Report
+            <FaDownload /> Download Report
           </button>
           <button className="gst-button" onClick={handleSave}>
-            <FaSave /> Save to History
+            <FaSave /> Save
           </button>
         </div>
       )}

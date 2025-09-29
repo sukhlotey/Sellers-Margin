@@ -7,6 +7,12 @@ body{
   padding: 0;
   box-sizing: border-box;
   background-color: #f9f9f9;
+  overflow: auto !important;
+}
+
+.razorpay-checkout-frame,
+.razorpay-checkout-frame * {
+  overflow: visible !important;
 }
 
 /* :root {

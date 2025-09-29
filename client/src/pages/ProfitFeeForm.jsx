@@ -238,7 +238,7 @@ const ProfitFeeForm = () => {
       return;
     }
 
-    if (!subscription?.isSubscribed && calcCount > 5) {
+   if (!subscription?.isSubscribed && calcCount >= 5) {
       setOpenModal(true);
       return;
     }

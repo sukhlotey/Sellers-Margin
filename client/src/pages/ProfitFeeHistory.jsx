@@ -250,10 +250,10 @@ const ProfitFeeHistory = () => {
         <>
           <div className="history-actions" style={{ marginBottom: "10px", display: "flex", gap: "10px" }}>
             <button className="download-btn" onClick={downloadPDF}>
-              <FiDownload /> Download PDF
+              <FiDownload /> PDF
             </button>
             <button className="download-btn" onClick={downloadExcel}>
-              <FiDownload /> Download Excel
+              <FiDownload /> Excel
             </button>
             <button
               className="download-btn-del-sel"

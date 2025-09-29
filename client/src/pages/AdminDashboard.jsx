@@ -170,9 +170,9 @@ const AdminDashboard = () => {
     <AdminDashboardLayout>
       <Box sx={{ maxWidth: 1200, mx: "auto" }} ref={dashboardRef}>
         <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3 }}>
-          <Typography variant="h4" gutterBottom>
+          {/* <Typography variant="h4" gutterBottom>
             Admin Dashboard
-          </Typography>
+          </Typography> */}
           <Button variant="contained" color="primary" onClick={handleDownloadReport}>
             Download Report
           </Button>
