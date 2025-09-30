@@ -5,10 +5,12 @@ import { useAlert } from "../context/AlertContext";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { validateRecoveryCode, resetPassword } from "../api/authApi";
-import { Button, TextField, Typography, Table, TableBody, TableCell, TableHead, TableRow, Box, Paper, Alert, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions } from "@mui/material";
+import { Button, TextField, Typography, Table, TableBody, TableCell, TableHead, TableRow, Box, Paper, Alert, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions,InputAdornment,IconButton } from "@mui/material";
 import { saveAs } from "file-saver";
 import "./pagesUI/Settings.css";
 import DashboardLayout from "../layout/DashboardLayout";
+import { IoCheckmarkCircleOutline, IoCloseCircleOutline } from "react-icons/io5";
+import { IoEyeOutline, IoEyeOffOutline } from "react-icons/io5";
 import jsPDF from "jspdf";
 import { FaDownload, FaStar, FaRegStar } from "react-icons/fa";
 import logo from "../assets/sellersense1.png";
@@ -36,7 +38,13 @@ const Setting = () => {
   const [newRecoveryCode, setNewRecoveryCode] = useState("");
   const [openRecoveryModal, setOpenRecoveryModal] = useState(false);
   const [deleteDialog, setDeleteDialog] = useState({ open: false });
-
+  const [passwordLengthValid, setPasswordLengthValid] = useState(false);
+  const [passwordSymbolValid, setPasswordSymbolValid] = useState(false);
+   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [showForgotNewPassword, setShowForgotNewPassword] = useState(false);
+  const [showForgotConfirmPassword, setShowForgotConfirmPassword] = useState(false);
   // Fetch billing history
   useEffect(() => {
     const fetchBillingHistory = async () => {
@@ -57,7 +65,12 @@ const Setting = () => {
 
   // Handle password change input
   const handlePasswordChange = (e) => {
-    setPasswordData({ ...passwordData, [e.target.name]: e.target.value });
+     const { name, value } = e.target;
+    setPasswordData({ ...passwordData, [name]: value });
+    if (name === "newPassword") {
+      setPasswordLengthValid(value.length >= 8);
+      setPasswordSymbolValid(/[!@#$%^&*]/.test(value));
+    }
   };
 
   // Submit password change
@@ -71,6 +84,10 @@ const Setting = () => {
       showAlert("error", "New passwords do not match.");
       return;
     }
+    if (!passwordLengthValid || !passwordSymbolValid) {
+      showAlert("error", "New password must be at least 8 characters and include a special symbol.");
+      return;
+    }
     try {
       await axios.post(
         "http://localhost:5000/api/auth/change-password",
@@ -79,6 +96,8 @@ const Setting = () => {
       );
       showAlert("success", "Password changed successfully!");
       setPasswordData({ currentPassword: "", newPassword: "", confirmPassword: "" });
+      setPasswordLengthValid(false);
+      setPasswordSymbolValid(false);
     } catch (err) {
       showAlert("error", err.response?.data?.message || "Failed to change password.");
     }
@@ -86,16 +105,30 @@ const Setting = () => {
 
   // Handle forgot password input
   const handleForgotPasswordChange = (e) => {
-    setForgotPasswordData({ ...forgotPasswordData, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    setForgotPasswordData({ ...forgotPasswordData, [name]: value });
+    if (name === "newPassword") {
+      setPasswordLengthValid(value.length >= 8);
+      setPasswordSymbolValid(/[!@#$%^&*]/.test(value));
+    }
   };
 
+  const isPasswordFormValid = () => {
+    return (
+      passwordData.currentPassword &&
+      passwordData.newPassword &&
+      passwordData.confirmPassword &&
+      passwordLengthValid &&
+      passwordSymbolValid
+    );
+  };
   // Handle secret code input
   const handleSecretCodeChange = (e) => {
     setSecretCode(e.target.value);
   };
 
   // Submit forgot password
-  const handleForgotPasswordSubmit = async () => {
+   const handleForgotPasswordSubmit = async () => {
     const { newPassword, confirmPassword } = forgotPasswordData;
     if (!secretCode) {
       showAlert("error", "Secret code is required.");
@@ -107,6 +140,10 @@ const Setting = () => {
     }
     if (newPassword !== confirmPassword) {
       showAlert("error", "New passwords do not match.");
+      return;
+    }
+    if (!passwordLengthValid || !passwordSymbolValid) {
+      showAlert("error", "New password must be at least 8 characters and include a special symbol.");
       return;
     }
     try {
@@ -124,10 +161,22 @@ const Setting = () => {
       setOpenRecoveryModal(true);
       setSecretCode("");
       setForgotPasswordData({ newPassword: "", confirmPassword: "" });
+      setPasswordLengthValid(false);
+      setPasswordSymbolValid(false);
       setShowForgotPassword(false);
     } catch (err) {
       showAlert("error", err.response?.data?.message || "Failed to reset password.");
     }
+  };
+
+  const isForgotPasswordFormValid = () => {
+    return (
+      secretCode &&
+      forgotPasswordData.newPassword &&
+      forgotPasswordData.confirmPassword &&
+      passwordLengthValid &&
+      passwordSymbolValid
+    );
   };
 
   // Handle copy code
@@ -138,6 +187,10 @@ const Setting = () => {
 
   // Handle modal close
   const handleModalClose = () => {
+     const date = new Date().toISOString().replace(/[-:]/g, "").split(".")[0];
+    const blob = new Blob([newRecoveryCode], { type: "text/plain;charset=utf-8" });
+    saveAs(blob, `sellersense-secretcode${date}.txt`);
+    showAlert("success", "Recovery code downloaded as TXT!");
     setOpenRecoveryModal(false);
     setNewRecoveryCode("");
   };
@@ -272,6 +325,26 @@ const Setting = () => {
     setDeleteDialog({ open: false });
   };
 
+  const toggleCurrentPasswordVisibility = () => {
+    setShowCurrentPassword(!showCurrentPassword);
+  };
+
+  const toggleNewPasswordVisibility = () => {
+    setShowNewPassword(!showNewPassword);
+  };
+
+  const toggleConfirmPasswordVisibility = () => {
+    setShowConfirmPassword(!showConfirmPassword);
+  };
+
+  const toggleForgotNewPasswordVisibility = () => {
+    setShowForgotNewPassword(!showForgotNewPassword);
+  };
+
+  const toggleForgotConfirmPasswordVisibility = () => {
+    setShowForgotConfirmPassword(!showForgotConfirmPassword);
+  };
+
   return (
     <DashboardLayout>
       <div className="settings-container">
@@ -280,7 +353,7 @@ const Setting = () => {
         </Typography>
 
         <div className="settings-top-row">
-          <Paper className="settings-section settings-card" style={{ "--card-index": 0 }}>
+           <Paper className="settings-section settings-card" style={{ "--card-index": 0 }}>
             <Typography variant="h6" gutterBottom>
               Account Settings
             </Typography>
@@ -317,25 +390,62 @@ const Setting = () => {
                   <TextField
                     label="New Password"
                     name="newPassword"
-                    type="password"
+                    type={showForgotNewPassword ? "text" : "password"}
                     value={forgotPasswordData.newPassword}
                     onChange={handleForgotPasswordChange}
                     fullWidth
                     margin="normal"
+                    InputProps={{
+                      endAdornment: (
+                        <InputAdornment position="end">
+                          <IconButton onClick={toggleForgotNewPasswordVisibility} edge="end">
+                            {showForgotNewPassword ? <IoEyeOffOutline /> : <IoEyeOutline />}
+                          </IconButton>
+                        </InputAdornment>
+                      ),
+                    }}
                   />
+                  <Box sx={{ mt: 1 }}>
+                    <Typography
+                      variant="caption"
+                      color={passwordLengthValid ? "success.main" : "textSecondary"}
+                      sx={{ display: "flex", alignItems: "center" }}
+                    >
+                      {passwordLengthValid ? <IoCheckmarkCircleOutline style={{ marginRight: 8 }} /> : <IoCloseCircleOutline style={{ marginRight: 8 }} />}
+                      Minimum 8 characters
+                    </Typography>
+                    <Typography
+                      variant="caption"
+                      color={passwordSymbolValid ? "success.main" : "textSecondary"}
+                      sx={{ display: "flex", alignItems: "center" }}
+                    >
+                      {passwordSymbolValid ? <IoCheckmarkCircleOutline style={{ marginRight: 8 }} /> : <IoCloseCircleOutline style={{ marginRight: 8 }} />}
+                      Include special symbol
+                    </Typography>
+                  </Box>
                   <TextField
                     label="Confirm New Password"
                     name="confirmPassword"
-                    type="password"
+                    type={showForgotConfirmPassword ? "text" : "password"}
                     value={forgotPasswordData.confirmPassword}
                     onChange={handleForgotPasswordChange}
                     fullWidth
                     margin="normal"
+                    InputProps={{
+                      endAdornment: (
+                        <InputAdornment position="end">
+                          <IconButton onClick={toggleForgotConfirmPasswordVisibility} edge="end">
+                            {showForgotConfirmPassword ? <IoEyeOffOutline /> : <IoEyeOutline />}
+                          </IconButton>
+                        </InputAdornment>
+                      ),
+                    }}
                   />
                   <Button
                     variant="contained"
                     color="primary"
                     onClick={handleForgotPasswordSubmit}
+                    disabled={!isForgotPasswordFormValid()}
                     sx={{ mt: 2 }}
                     style={{ maxWidth: "200px" }}
                   >
@@ -355,11 +465,20 @@ const Setting = () => {
                   <TextField
                     label="Current Password"
                     name="currentPassword"
-                    type="password"
+                    type={showCurrentPassword ? "text" : "password"}
                     value={passwordData.currentPassword}
                     onChange={handlePasswordChange}
                     fullWidth
                     margin="normal"
+                    InputProps={{
+                      endAdornment: (
+                        <InputAdornment position="end">
+                          <IconButton onClick={toggleCurrentPasswordVisibility} edge="end">
+                            {showCurrentPassword ? <IoEyeOffOutline /> : <IoEyeOutline />}
+                          </IconButton>
+                        </InputAdornment>
+                      ),
+                    }}
                   />
                   <Typography
                     variant="body2"
@@ -372,25 +491,62 @@ const Setting = () => {
                   <TextField
                     label="New Password"
                     name="newPassword"
-                    type="password"
+                    type={showNewPassword ? "text" : "password"}
                     value={passwordData.newPassword}
                     onChange={handlePasswordChange}
                     fullWidth
                     margin="normal"
+                    InputProps={{
+                      endAdornment: (
+                        <InputAdornment position="end">
+                          <IconButton onClick={toggleNewPasswordVisibility} edge="end">
+                            {showNewPassword ? <IoEyeOffOutline /> : <IoEyeOutline />}
+                          </IconButton>
+                        </InputAdornment>
+                      ),
+                    }}
                   />
+                  <Box sx={{ mt: 1 }}>
+                    <Typography
+                      variant="caption"
+                      color={passwordLengthValid ? "success.main" : "textSecondary"}
+                      sx={{ display: "flex", alignItems: "center" }}
+                    >
+                      {passwordLengthValid ? <IoCheckmarkCircleOutline style={{ marginRight: 8 }} /> : <IoCloseCircleOutline style={{ marginRight: 8 }} />}
+                      Minimum 8 characters
+                    </Typography>
+                    <Typography
+                      variant="caption"
+                      color={passwordSymbolValid ? "success.main" : "textSecondary"}
+                      sx={{ display: "flex", alignItems: "center" }}
+                    >
+                      {passwordSymbolValid ? <IoCheckmarkCircleOutline style={{ marginRight: 8 }} /> : <IoCloseCircleOutline style={{ marginRight: 8 }} />}
+                      Include special symbol
+                    </Typography>
+                  </Box>
                   <TextField
                     label="Confirm New Password"
                     name="confirmPassword"
-                    type="password"
+                    type={showConfirmPassword ? "text" : "password"}
                     value={passwordData.confirmPassword}
                     onChange={handlePasswordChange}
                     fullWidth
                     margin="normal"
+                    InputProps={{
+                      endAdornment: (
+                        <InputAdornment position="end">
+                          <IconButton onClick={toggleConfirmPasswordVisibility} edge="end">
+                            {showConfirmPassword ? <IoEyeOffOutline /> : <IoEyeOutline />}
+                          </IconButton>
+                        </InputAdornment>
+                      ),
+                    }}
                   />
                   <Button
                     variant="contained"
                     color="primary"
                     onClick={handleChangePassword}
+                    disabled={!isPasswordFormValid()}
                     sx={{ mt: 2 }}
                     style={{ maxWidth: "200px" }}
                   >
@@ -561,7 +717,6 @@ const Setting = () => {
   </Dialog>
         </Paper>
 
-        {/* Recovery Code Modal */}
         <Dialog open={openRecoveryModal} onClose={handleModalClose}>
           <DialogTitle>Save Your New Recovery Code</DialogTitle>
           <DialogContent>
@@ -576,7 +731,7 @@ const Setting = () => {
             </Button>
           </DialogContent>
           <DialogActions>
-            <Button onClick={handleModalClose}>Confirm</Button>
+            <Button onClick={handleModalClose}>Confirm & Download</Button>
           </DialogActions>
         </Dialog>
       </div>

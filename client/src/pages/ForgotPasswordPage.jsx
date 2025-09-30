@@ -2,9 +2,11 @@ import { useState, useContext } from "react";
 import { AuthContext } from "../context/AuthContext";
 import { useNavigate, Link } from "react-router-dom";
 import { validateRecoveryCode, resetPassword } from "../api/authApi";
-import { Alert, Button, TextField, Typography, Box } from "@mui/material";
+import { Alert, Button, TextField, Typography, Box,InputAdornment,IconButton } from "@mui/material";
 import Logo from "../components/Logo";
 import "./pagesUI/Auth.css";
+import { IoCheckmarkCircleOutline, IoCloseCircleOutline } from "react-icons/io5";
+import { IoEyeOutline, IoEyeOffOutline } from "react-icons/io5";
 
 const ForgotPasswordPage = () => {
   const { user } = useContext(AuthContext);
@@ -19,13 +21,21 @@ const ForgotPasswordPage = () => {
   const [userId, setUserId] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
-
+  const [passwordLengthValid, setPasswordLengthValid] = useState(false);
+  const [passwordSymbolValid, setPasswordSymbolValid] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   if (user) {
     navigate("/dashboard", { replace: true });
   }
 
   const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    setFormData({ ...formData, [name]: value });
+    if (name === "newPassword") {
+      setPasswordLengthValid(value.length >= 8);
+      setPasswordSymbolValid(/[!@#$%^&*]/.test(value));
+    }
     setError(null);
   };
 
@@ -56,6 +66,11 @@ const ForgotPasswordPage = () => {
         setIsLoading(false);
         return;
       }
+       if (!passwordLengthValid || !passwordSymbolValid) {
+        setError("New password must be at least 8 characters and include a special symbol.");
+        setIsLoading(false);
+        return;
+      }
       await resetPassword({
         userId,
         newPassword: formData.newPassword,
@@ -69,6 +84,24 @@ const ForgotPasswordPage = () => {
       setIsLoading(false);
     }
   };
+
+    const isResetPasswordFormValid = () => {
+    return (
+      formData.newPassword &&
+      formData.confirmPassword &&
+      passwordLengthValid &&
+      passwordSymbolValid
+    );
+  };
+
+  const toggleNewPasswordVisibility = () => {
+    setShowNewPassword(!showNewPassword);
+  };
+
+  const toggleConfirmPasswordVisibility = () => {
+    setShowConfirmPassword(!showConfirmPassword);
+  };
+
 
   return (
     <div className="auth-container">
@@ -130,31 +163,67 @@ const ForgotPasswordPage = () => {
               <TextField
                 label="New Password"
                 name="newPassword"
-                type="password"
+                type={showNewPassword ? "text" : "password"}
                 value={formData.newPassword}
                 onChange={handleChange}
                 placeholder="Enter new password"
                 fullWidth
                 required
+                InputProps={{
+                  endAdornment: (
+                    <InputAdornment position="end">
+                      <IconButton onClick={toggleNewPasswordVisibility} edge="end">
+                        {showNewPassword ? <IoEyeOffOutline /> : <IoEyeOutline />}
+                      </IconButton>
+                    </InputAdornment>
+                  ),
+                }}
               />
+              <Box sx={{ mt: 1 }}>
+                <Typography
+                  variant="caption"
+                  color={passwordLengthValid ? "success.main" : "textSecondary"}
+                  sx={{ display: "flex", alignItems: "center" }}
+                >
+                  {passwordLengthValid ? <IoCheckmarkCircleOutline style={{ marginRight: 8 }} /> : <IoCloseCircleOutline style={{ marginRight: 8 }} />}
+                  Minimum 8 characters
+                </Typography>
+                <Typography
+                  variant="caption"
+                  color={passwordSymbolValid ? "success.main" : "textSecondary"}
+                  sx={{ display: "flex", alignItems: "center" }}
+                >
+                  {passwordSymbolValid ? <IoCheckmarkCircleOutline style={{ marginRight: 8 }} /> : <IoCloseCircleOutline style={{ marginRight: 8 }} />}
+                  Include special symbol
+                </Typography>
+              </Box>
             </Box>
             <Box className="form-group">
               <TextField
                 label="Confirm Password"
                 name="confirmPassword"
-                type="password"
+                type={showConfirmPassword ? "text" : "password"}
                 value={formData.confirmPassword}
                 onChange={handleChange}
                 placeholder="Confirm new password"
                 fullWidth
                 required
+                InputProps={{
+                  endAdornment: (
+                    <InputAdornment position="end">
+                      <IconButton onClick={toggleConfirmPasswordVisibility} edge="end">
+                        {showConfirmPassword ? <IoEyeOffOutline /> : <IoEyeOutline />}
+                      </IconButton>
+                    </InputAdornment>
+                  ),
+                }}
               />
             </Box>
             <Button
               type="submit"
               variant="contained"
               color="primary"
-              disabled={isLoading}
+              disabled={isLoading || !isResetPasswordFormValid()}
               fullWidth
             >
               {isLoading ? <div className="spinner"></div> : "Reset Password"}

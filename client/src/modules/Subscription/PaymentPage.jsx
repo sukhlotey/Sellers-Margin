@@ -23,7 +23,7 @@ const PaymentPage = () => {
     }
 
     const options = {
-      key: import.meta.env.VITE_RAZORPAY_KEY_ID || "rzp_test_RJSJUBsZz678SC",
+      key: import.meta.env.VITE_RAZORPAY_KEY_ID,
       amount: paymentData.order.amount,
       currency: "INR",
       name: "Seller Sense",
@@ -55,7 +55,7 @@ const PaymentPage = () => {
             expiry: verifyResponse.data.subscription.endDate,
           });
           navigate("/subscription");
-          window.location.reload(); // Refresh page after navigation to fix scroll lock
+          window.location.reload();
           showAlert("success", "Payment Successful! Subscription activated.");
         } catch (err) {
           console.error("Payment verification error:", err.response?.data || err.message);

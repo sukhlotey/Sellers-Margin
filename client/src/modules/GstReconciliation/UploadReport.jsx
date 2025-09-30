@@ -3,6 +3,8 @@ import { GstContext } from "../../context/GstContext";
 import { AuthContext } from "../../context/AuthContext";
 import { SubscriptionContext } from "../../context/SubscriptionContext";
 import { uploadSettlement } from "../../api/gstApi";
+import { Modal, Box, Typography, Button, IconButton } from "@mui/material";
+import { RiCloseFill } from "react-icons/ri";
 import * as XLSX from "xlsx";
 import { saveAs } from "file-saver";
 import { FiUpload } from "react-icons/fi";
@@ -400,91 +402,109 @@ const UploadReport = () => {
         </div>
       )}
 
-      {/* Plans Modal (unchanged) */}
       {showPlansModal && (
-        <div
-          className="modal-overlay"
-          style={{
-            position: "fixed",
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backgroundColor: "rgba(0, 0, 0, 0.5)",
-            display: "flex",
-            justifyContent: "center",
-            alignItems: "center",
-            zIndex: 1000,
-          }}
-        >
-          <div
-            className="modal-content"
-            style={{
-              backgroundColor: "#fff",
-              padding: "2rem",
-              borderRadius: "8px",
-              width: "80%",
-              maxWidth: "600px",
-              maxHeight: "80vh",
-              overflowY: "auto",
-              boxShadow: "0 4px 8px rgba(0, 0, 0, 0.2)",
-            }}
-          >
-            <h2 style={{ marginBottom: "1rem" }}>Upgrade Your Plan</h2>
-            <p style={{ marginBottom: "1.5rem" }}>
-              The GST Settlement module requires an All Access Monthly or Annual plan. Choose a plan to unlock unlimited access to all modules.
-            </p>
-            <div style={{ display: "flex", gap: "1rem", flexWrap: "wrap" }}>
-              {premiumPlans.map((plan) => (
-                <div
-                  key={plan.id}
-                  style={{
-                    flex: "1",
-                    minWidth: "200px",
-                    padding: "1rem",
-                    border: "1px solid #ddd",
-                    borderRadius: "8px",
-                    textAlign: "center",
-                  }}
-                >
-                  <h3>{plan.name}</h3>
-                  <p>₹{plan.price} / {plan.duration}</p>
-                  <p>Unlimited access to all modules including GST Settlement</p>
-                  <button
-                    style={{
-                      backgroundColor: "#1976d2",
-                      color: "#fff",
-                      padding: "0.5rem 1rem",
-                      border: "none",
-                      borderRadius: "4px",
-                      cursor: "pointer",
-                      marginTop: "1rem",
-                    }}
-                    onClick={() => handleBuy(plan.id)}
-                  >
-                    Buy Now
-                  </button>
-                </div>
-              ))}
+  <Modal
+    open={showPlansModal}
+    onClose={() => setShowPlansModal(false)}
+    aria-labelledby="subscription-modal-title"
+    aria-describedby="subscription-modal-description"
+  >
+    <Box
+      sx={{
+        top: "50%",
+        left: "50%",
+        transform: "translate(-50%, -50%)",
+        width: { xs: "90%", sm: 600, md: 800 },
+        bgcolor: "background.paper",
+        boxShadow: 24,
+        p: 4,
+        borderRadius: 2,
+        maxHeight: "90vh",
+        overflowY: "auto",
+        position: "relative",
+      }}
+    >
+      <style>
+        {`
+          .modal-plans-flex {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-around;
+            gap: 1rem;
+          }
+          .modal-plans-flex .plan-card {
+            min-height: 300px;
+            flex-grow: 1;
+            min-width: 350px;
+          }
+          @media (min-width: 768px) {
+            .modal-plans-flex .plan-card {
+              flex: 1 1 calc(33.33% - 1.5rem);
+              max-width: calc(33.33% - 1.5rem);
+            }
+          }
+          @media (min-width: 600px) and (max-width: 767px) {
+            .modal-plans-flex .plan-card {
+              flex: 1 1 calc(50% - 1.5rem);
+              max-width: calc(50% - 1.5rem);
+            }
+          }
+          @media (max-width: 480px) {
+            .modal-plans-flex .plan-card {
+              flex: 1 1 100%;
+              max-width: 100%;
+            }
+               .modal-plans-flex {
+             justify-content: center;
+            }
+          }
+
+        `}
+      </style>
+      <IconButton
+        onClick={() => setShowPlansModal(false)}
+        sx={{
+          position: "absolute",
+          top: 8,
+          right: 8,
+          color: "error.main",
+        }}
+      >
+        <RiCloseFill />
+      </IconButton>
+      <Typography id="subscription-modal-title" variant="h6" component="h2" gutterBottom>
+        Upgrade Your Plan
+      </Typography>
+      <Typography id="subscription-modal-description" sx={{ mb: 3 }}>
+        The GST Settlement module requires an All Access Monthly or Annual plan. Choose a plan to unlock unlimited access to all modules.
+      </Typography>
+      <div className="modal-plans-flex">
+        {premiumPlans.map((plan) => (
+          <div key={plan.id} className="plan-card">
+            <h3 className="plan-name">{plan.name}</h3>
+            <p className="plan-price">₹{plan.price}</p>
+            <p className="plan-duration">{plan.duration}</p>
+            <div className="plan-features">
+              <ul>
+                <li>Unlimited access to all modules</li>
+                <li>Ad free</li>
+                {plan.id === "annual" && <li>Discount 60%</li>}
+              </ul>
             </div>
-            <button
-              style={{
-                backgroundColor: "#ccc",
-                color: "#000",
-                padding: "0.5rem 1rem",
-                border: "none",
-                borderRadius: "4px",
-                cursor: "pointer",
-                marginTop: "1.5rem",
-                width: "100%",
-              }}
-              onClick={() => setShowPlansModal(false)}
+            <Button
+              variant="contained"
+              color="primary"
+              onClick={() => handleBuy(plan.id)}
+              sx={{ mt: 2 }}
             >
-              Cancel
-            </button>
+              Buy Now
+            </Button>
           </div>
-        </div>
-      )}
+        ))}
+      </div>
+    </Box>
+  </Modal>
+)}
     </div>
   );
 };

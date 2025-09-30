@@ -63,6 +63,10 @@ const Register = () => {
   };
 
   const handleModalClose = () => {
+    const date = new Date().toISOString().replace(/[-:]/g, "").split(".")[0];
+    const blob = new Blob([recoveryCode], { type: "text/plain;charset=utf-8" });
+    saveAs(blob, `sellersense-secretcode${date}.txt`);
+    showAlert("success", "Recovery code downloaded as TXT!");
     setOpenRecoveryModal(false);
     setIsLoading(false);
     navigate("/dashboard", { replace: true });
@@ -178,7 +182,6 @@ const Register = () => {
         </div>
       </div>
 
-      {/* Recovery Code Modal */}
       <Dialog open={openRecoveryModal} onClose={handleModalClose}>
         <DialogTitle>Save Your Recovery Code</DialogTitle>
         <DialogContent>
@@ -193,7 +196,7 @@ const Register = () => {
           </Button>
         </DialogContent>
         <DialogActions>
-          <Button onClick={handleModalClose}>Confirm</Button>
+          <Button onClick={handleModalClose}>Confirm & Download</Button>
         </DialogActions>
       </Dialog>
     </div>
