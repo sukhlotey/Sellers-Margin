@@ -49,7 +49,7 @@ const Setting = () => {
   useEffect(() => {
     const fetchBillingHistory = async () => {
       try {
-        const res = await axios.get("http://localhost:5000/api/subscription/history", {
+        const res = await axios.get("https://sellers-sense.onrender.com/api/subscription/history", {
           headers: { Authorization: `Bearer ${token}` },
         });
         setBillingHistory(res.data);
@@ -90,7 +90,7 @@ const Setting = () => {
     }
     try {
       await axios.post(
-        "http://localhost:5000/api/auth/change-password",
+        "https://sellers-sense.onrender.com/api/auth/change-password",
         { currentPassword, newPassword },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -218,7 +218,7 @@ const Setting = () => {
     }
     try {
       await axios.post(
-        "http://localhost:5000/api/feedback/submit",
+        "https://sellers-sense.onrender.com/api/feedback/submit",
         { rating, feedback },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -309,7 +309,7 @@ const Setting = () => {
   // Confirm account deletion
   const confirmDeleteAccount = async () => {
     try {
-      await axios.delete("http://localhost:5000/api/auth/delete-account", {
+      await axios.delete("https://sellers-sense.onrender.com/api/auth/delete-account", {
         headers: { Authorization: `Bearer ${token}` },
       });
       showAlert("success", "Account deleted successfully!");

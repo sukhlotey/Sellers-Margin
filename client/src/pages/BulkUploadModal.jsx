@@ -369,7 +369,7 @@ const BulkUploadModal = () => {
         }
 
         const res = await axios.post(
-          "http://localhost:5000/api/profit-fee/calculate",
+          "https://sellers-sense.onrender.com/api/profit-fee/calculate",
           {
             sellingPrice,
             costPrice,
@@ -446,12 +446,12 @@ const BulkUploadModal = () => {
         return;
       }
       const res = await axios.post(
-        "http://localhost:5000/api/profit-fee/bulk-save",
+        "https://sellers-sense.onrender.com/api/profit-fee/bulk-save",
         { records: validRecords, fileName: file ? file.name : "Untitled" },
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
-      const historyRes = await axios.get("http://localhost:5000/api/profit-fee/bulk/history", {
+      const historyRes = await axios.get("https://sellers-sense.onrender.com/api/profit-fee/bulk/history", {
         headers: { Authorization: `Bearer ${token}` },
       });
       setBulkHistory(historyRes.data);
@@ -492,7 +492,7 @@ const BulkUploadModal = () => {
     }
     try {
       const res = await axios.post(
-        "http://localhost:5000/api/subscription/create-order",
+        "https://sellers-sense.onrender.com/api/subscription/create-order",
         { plan },
         { headers: { Authorization: `Bearer ${token}` } }
       );

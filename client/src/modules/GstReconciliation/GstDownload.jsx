@@ -34,7 +34,7 @@ const GstDownload = () => {
 
     for (const report of reports) {
       try {
-        const response = await axios.get(`http://localhost:5000/api/gst/bulk/${report._id}`, {
+        const response = await axios.get(`https://sellers-sense.onrender.com/api/gst/bulk/${report._id}`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         const records = response.data.map((record) => {
@@ -65,7 +65,7 @@ const GstDownload = () => {
           };
         });
 
-        const batchSummary = await axios.get(`http://localhost:5000/api/gst/summary?batchId=${report._id}`, {
+        const batchSummary = await axios.get(`https://sellers-sense.onrender.com/api/gst/summary?batchId=${report._id}`, {
           headers: { Authorization: `Bearer ${token}` },
         }).then(res => res.data.summary);
 

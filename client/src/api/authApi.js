@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const API = axios.create({
-  baseURL: "http://localhost:5000/api", // backend URL
+  baseURL: "https://sellers-sense.onrender.com/api", // backend URL
 });
 
 // Register user

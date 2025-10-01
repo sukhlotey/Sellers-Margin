@@ -33,7 +33,7 @@ const PaymentPage = () => {
         console.log("Payment response:", response);
         try {
           const verifyResponse = await axios.post(
-            "http://localhost:5000/api/subscription/verify",
+            "https://sellers-sense.onrender.com/api/subscription/verify",
             {
               razorpay_order_id: response.razorpay_order_id,
               razorpay_payment_id: response.razorpay_payment_id,

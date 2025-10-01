@@ -46,7 +46,7 @@ const ProfitFeeForm = () => {
   useEffect(() => {
     if (token && !subscription?.isSubscribed) {
       axios
-        .get("http://localhost:5000/api/auth/profile", {
+        .get("https://sellers-sense.onrender.com/api/auth/profile", {
           headers: { Authorization: `Bearer ${token}` },
         })
         .then((res) => {
@@ -182,7 +182,7 @@ const ProfitFeeForm = () => {
 
     try {
       const res = await axios.post(
-        "http://localhost:5000/api/profit-fee/calculate",
+        "https://sellers-sense.onrender.com/api/profit-fee/calculate",
         {
           sellingPrice: sp,
           costPrice: cp,
@@ -253,7 +253,7 @@ const ProfitFeeForm = () => {
 
     try {
       const res = await axios.post(
-        "http://localhost:5000/api/profit-fee/save",
+        "https://sellers-sense.onrender.com/api/profit-fee/save",
         {
           ...result,
           sellingPrice: Number(result.sellingPrice),

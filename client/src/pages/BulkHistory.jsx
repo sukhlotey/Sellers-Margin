@@ -20,7 +20,7 @@ const BulkHistory = () => {
   useEffect(() => {
     const fetchBulkHistory = async () => {
       try {
-        const res = await axios.get("http://localhost:5000/api/profit-fee/bulk/history", {
+        const res = await axios.get("https://sellers-sense.onrender.com/api/profit-fee/bulk/history", {
           headers: { Authorization: `Bearer ${token}` },
         });
         setBulkHistory(res.data);
@@ -35,7 +35,7 @@ const BulkHistory = () => {
     try {
       setLoading(true);
       const res = await axios.get(
-        `http://localhost:5000/api/profit-fee/bulk/${batch._id}`,
+        `https://sellers-sense.onrender.com/api/profit-fee/bulk/${batch._id}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
       setSelectedBatch({
@@ -58,7 +58,7 @@ const BulkHistory = () => {
     const { batchId } = dialog;
     try {
       setLoading(true);
-      await axios.delete(`http://localhost:5000/api/profit-fee/bulk/${batchId}`, {
+      await axios.delete(`https://sellers-sense.onrender.com/api/profit-fee/bulk/${batchId}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       deleteFromBulkHistory([batchId]);
@@ -97,7 +97,7 @@ const BulkHistory = () => {
   const confirmBulkDelete = async () => {
     try {
       setLoading(true);
-      await axios.delete("http://localhost:5000/api/profit-fee/bulk", {
+      await axios.delete("https://sellers-sense.onrender.com/api/profit-fee/bulk", {
         headers: { Authorization: `Bearer ${token}` },
         data: { batchIds: selectedBatches },
       });

@@ -14,7 +14,7 @@ export const PreferencesProvider = ({ children }) => {
   const updatePreferences = async (newPreferences) => {
     try {
       const res = await axios.put(
-        "http://localhost:5000/api/auth/preferences",
+        "https://sellers-sense.onrender.com/api/auth/preferences",
         newPreferences,
         { headers: { Authorization: `Bearer ${token}` } }
       );

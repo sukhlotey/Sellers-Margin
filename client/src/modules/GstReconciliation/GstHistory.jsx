@@ -36,7 +36,7 @@ const GstHistory = () => {
 
   const handleDownloadBatch = async (batchId, filename, marketplace) => {
     try {
-      const response = await axios.get(`http://localhost:5000/api/gst/bulk/${batchId}`, {
+      const response = await axios.get(`https://sellers-sense.onrender.com/api/gst/bulk/${batchId}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       const feeLabel = marketplace === "amazon" ? "Closing Fee" : marketplace === "flipkart" ? "Collection Fee" : "Other Charges";
@@ -65,7 +65,7 @@ const GstHistory = () => {
         "Marketplace": record.marketplace,
       }));
 
-      const summaryResponse = await axios.get(`http://localhost:5000/api/gst/summary?batchId=${batchId}`, {
+      const summaryResponse = await axios.get(`https://sellers-sense.onrender.com/api/gst/summary?batchId=${batchId}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       const summary = [

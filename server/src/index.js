@@ -11,8 +11,20 @@ connectDB();
 
 const app = express();
 
-// app.use(cors());
-app.use(cors({ origin: ['https://sellersense.netlify.app', 'https://sellersense.in','http://localhost:5173'] }));
+if (process.env.NODE_ENV === "production") {
+  app.set("trust proxy", 1); // Trust Render's proxy for HTTPS
+}
+
+// CORS configuration
+const allowedOrigins = [
+  'https://sellersense.netlify.app',
+  'https://sellersense.in',
+];
+
+if (process.env.NODE_ENV !== "production") {
+  allowedOrigins.push('http://localhost:5173');
+}
+app.use(cors({ origin: allowedOrigins, credentials: true }));
 app.use(express.json());
 
 app.get('/ping', (req, res) => res.send('OK'));

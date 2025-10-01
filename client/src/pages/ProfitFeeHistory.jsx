@@ -20,7 +20,7 @@ const ProfitFeeHistory = () => {
   useEffect(() => {
     const fetchHistory = async () => {
       try {
-        const res = await axios.get("http://localhost:5000/api/profit-fee/history", {
+        const res = await axios.get("https://sellers-sense.onrender.com/api/profit-fee/history", {
           headers: { Authorization: `Bearer ${token}` },
         });
         setHistory(res.data);
@@ -43,7 +43,7 @@ const ProfitFeeHistory = () => {
     const { recordId } = dialog;
     try {
       setLoading(true);
-      await axios.delete(`http://localhost:5000/api/profit-fee/${recordId}`, {
+      await axios.delete(`https://sellers-sense.onrender.com/api/profit-fee/${recordId}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       deleteFromHistory([recordId]);
@@ -77,7 +77,7 @@ const ProfitFeeHistory = () => {
   const confirmBulkDelete = async () => {
     try {
       setLoading(true);
-      await axios.delete("http://localhost:5000/api/profit-fee", {
+      await axios.delete("https://sellers-sense.onrender.com/api/profit-fee", {
         headers: { Authorization: `Bearer ${token}` },
         data: { recordIds: selectedRecords },
       });

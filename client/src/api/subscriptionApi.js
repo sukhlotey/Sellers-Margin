@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const API_URL = "http://localhost:5000/api/subscription";
+const API_URL = "https://sellers-sense.onrender.com/api/subscription";
 
 export const getPlans = () => axios.get(`${API_URL}/plans`);
 
