@@ -29,7 +29,7 @@ const Sidebar = ({ isOpen, isMobile, toggleSidebar }) => {
             className={({ isActive }) => (isActive ? "active-link" : "")}
             onClick={() => isMobile && toggleSidebar()}
           >
-            <RiMoneyRupeeCircleLine size={25} /> Profit & Fee Calculator
+            <RiMoneyRupeeCircleLine size={25} /> Profit & Fee Monitor
           </NavLink>
         </li>
         <li>

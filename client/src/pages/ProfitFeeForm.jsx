@@ -62,12 +62,20 @@ const ProfitFeeForm = () => {
               ...plan,
               features:
                 plan.id === "basic_monthly"
-                  ? ["Unlimited calculations and savings", "Unlimited bulk calculations", "Ad free"]
-                  : plan.id === "all_monthly"
-                  ? ["Access all modules unlimited", "Ad free"]
-                  : plan.id === "annual"
-                  ? ["Discount 60%", "Access all modules unlimited", "Ad free"]
-                  : [],
+                ? ["Unlimited calculations & savings (Profit Fee & Monitor)", "Ad free"]
+                : plan.id === "all_monthly"
+                ? [ "Unlimited calculations & savings (Profit Fee & Monitor)",
+                "Unlimited bulk calculations",
+                "Unlimited reports generate",
+                "Ad free"]
+                : plan.id === "annual"
+                ? [ "Discount 70%",
+                "Unlimited calculations & savings (Profit Fee & Monitor)",
+                "GST & Settlement unlimited",
+                "Unlimited bulk calculations",
+                "Unlimited reports generate",
+                "Ad free",]
+                : [],
             }));
           console.log("Fetched plans:", enrichedPlans);
           setPlans(enrichedPlans);
@@ -610,7 +618,7 @@ const ProfitFeeForm = () => {
         >
           <style>
             {`
-              .modal-plans-flex {
+             .modal-plans-flex {
                 display: flex;
                 flex-wrap: wrap;
                 justify-content: space-between;
@@ -620,6 +628,20 @@ const ProfitFeeForm = () => {
                 min-height: 300px;
                 flex-grow: 1;
               }
+                .plan-name{
+                font-size: 1.7rem;
+                padding-bottom: 0;
+                }
+                .plan-price{
+                  font-size: 1.5rem;
+                  padding-top: 0;
+                  }
+                  .price-duration{
+                    display: flex;
+                    gap: 1rem;
+                    align-items: center;
+                    justify-content: space-between;
+                    }
               @media (min-width: 768px) {
                 .modal-plans-flex .plan-card {
                   flex: 1 1 calc(33.33% - 1.5rem);
@@ -662,8 +684,10 @@ const ProfitFeeForm = () => {
               plans.map((plan) => (
                 <div key={plan.id} className="plan-card">
                   <h3 className="plan-name">{plan.name}</h3>
+                  <div className="price-duration">
                   <p className="plan-price">₹{plan.price}</p>
                   <p className="plan-duration">{plan.duration}</p>
+                    </div>
                   <div className="plan-features">
                     <ul>
                       {plan.features.map((feature, index) => (

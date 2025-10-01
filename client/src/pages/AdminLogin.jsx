@@ -45,7 +45,7 @@ const AdminLogin = () => {
           </div>
           <Typography variant="h6">Admin Login</Typography>
         </div>
-        <form onSubmit={handleSubmit} className="auth-form">
+        <form autoComplete="off" onSubmit={handleSubmit} className="auth-form">
           <Box className="form-group">
             <TextField
               label="Name"

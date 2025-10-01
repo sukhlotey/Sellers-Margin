@@ -71,8 +71,8 @@ const UploadReport = () => {
   };
 
   const premiumPlans = [
-    { id: "all_monthly", name: "All Access Monthly", price: 499, duration: "30 days" },
-    { id: "annual", name: "All Access Annually", price: 1799, duration: "365 days" },
+    { id: "all_monthly", name: "Pro", price: 499, duration: "30 days" },
+    { id: "annual", name: "Premium", price: 1799, duration: "365 days" },
   ];
 
   const validateFileHeaders = (headers) => {
@@ -486,9 +486,12 @@ const UploadReport = () => {
             <p className="plan-duration">{plan.duration}</p>
             <div className="plan-features">
               <ul>
-                <li>Unlimited access to all modules</li>
+                {plan.id === "annual" && <li>Discount 70%</li>}
+                <li>Unlimited calculations & savings (Profit Fee & Monitor)</li>
+                <li>Unlimited bulk calculations</li>
+                <li>GST & Settlement unlimited</li>
+                <li>Unlimited reports generate</li>
                 <li>Ad free</li>
-                {plan.id === "annual" && <li>Discount 60%</li>}
               </ul>
             </div>
             <Button

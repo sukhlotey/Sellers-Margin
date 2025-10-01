@@ -1,5 +1,4 @@
 .plans-container {
-  /* padding: 2rem; */
   max-width: 1200px;
   margin: 0 auto;
   text-align: center;
@@ -16,7 +15,6 @@
 .current-plan {
   font-size: 1.2rem;
   color: #4a5568;
-  /* margin-bottom: 2rem; */
 }
 
 .current-plan strong {
@@ -26,15 +24,15 @@
 .plans-flex {
   display: flex;
   flex-wrap: wrap;
-  justify-content: flex-start; /* Align to start (left) */
-  gap: 1.5rem; /* Reduced gap for tighter spacing */
+  justify-content: flex-start;
+  gap: 1.5rem;
 }
 
 .plan-card {
   background: #ffffff;
   border-radius: 12px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  padding: 2rem;
+  padding: 1rem;
   transition: transform 0.3s ease, box-shadow 0.3s ease, opacity 0.5s ease;
   position: relative;
   overflow: hidden;
@@ -84,7 +82,6 @@
   font-size: 1.8rem;
   font-weight: 600;
   color: #2d3748;
-  margin-bottom: 1rem;
 }
 
 .plan-price {
@@ -101,7 +98,7 @@
 }
 
 .plan-features {
-  font-size: 1rem;
+  font-size: 15px;
   color: #4a5568;
   text-align: left;
   margin-bottom: 1.5rem;
@@ -127,6 +124,11 @@
   font-weight: bold;
 }
 
+.plan-features li.cross-icon::before {
+  content: "✖";
+  color: #e53e3e;
+}
+
 .plan-button {
   background: linear-gradient(90deg, #2b6cb0, #4299e1);
   color: #ffffff;
@@ -148,10 +150,9 @@
   transform: scale(0.95);
 }
 
-/* Responsive design */
 @media (max-width: 1024px) {
   .plan-card {
-    flex: 1 1 calc(33.33% - 1.5rem); /* Three cards per row */
+    flex: 1 1 calc(33.33% - 1.5rem);
     max-width: calc(33.33% - 1.5rem);
   }
 }
@@ -166,7 +167,7 @@
   }
 
   .plan-card {
-    flex: 1 1 calc(50% - 1.5rem); /* Two cards per row */
+    flex: 1 1 calc(50% - 1.5rem);
     max-width: calc(50% - 1.5rem);
     min-height: 300px;
     padding: 1.5rem;
@@ -191,7 +192,7 @@
   }
 
   .plan-card {
-    flex: 1 1 100%; /* One card per row */
+    flex: 1 1 100%;
     max-width: 100%;
     padding: 1rem;
   }

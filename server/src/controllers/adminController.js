@@ -2,13 +2,16 @@ import Admin from "../models/Admin.js";
 import User from "../models/User.js";
 import Subscription from "../models/Subscription.js";
 import Feedback from "../models/Feedback.js";
+import config from "../config/config.js";
 import jwt from "jsonwebtoken";
 
-// Hardcoded security answers
-const SECRET_CODE = "123456";
-const FAVORITE_COLOR = "Black";
-const FAVORITE_CHARACTER = "Harry Potter";
+const SECRET_CODE = config.SECRET_CODE;
+const FAVORITE_COLOR = config.FAVORITE_COLOR;
+const FAVORITE_CHARACTER = config.FAVORITE_CHARACTER;
 
+// const SECRET_CODE = "2972002"
+// const FAVORITE_COLOR = "Black"
+// const FAVORITE_CHARACTER = "Harry Potter"
 // Generate admin JWT token
 const generateAdminToken = (id) => {
   return jwt.sign({ adminId: id }, process.env.JWT_SECRET_ADMIN, {
@@ -16,7 +19,6 @@ const generateAdminToken = (id) => {
   });
 };
 
-// @desc Login admin
 export const loginAdmin = async (req, res) => {
   try {
     const { name, email, favoriteColor, favoriteCharacter, secretCode } = req.body;

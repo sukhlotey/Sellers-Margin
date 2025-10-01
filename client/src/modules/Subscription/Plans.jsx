@@ -18,18 +18,25 @@ const Plans = () => {
         ...plan,
         features:
           plan.id === "free"
-            ? ["5 calculations", "Ad free"]
+            ? ["Limited calculations & savings (Profit Fee & Monitor)","Bulk calculations",
+                "GST & Settlement", "Ad free"]
             : plan.id === "basic_monthly"
-            ? ["Unlimited calculations and savings", "Unlimited bulk calculations", "Ad free"]
+            ? ["Unlimited calculations & savings (Profit Fee & Monitor)", "Unlimited bulk calculations", "Unlimited reports generate", "GST & Settlement unlimited", "Ad free"]
             : plan.id === "all_monthly"
             ? [
-                "Access all modules unlimited",
+                "Unlimited calculations & savings (Profit Fee & Monitor)",
+                "Unlimited bulk calculations",
+                "GST & Settlement unlimited",
+                "Unlimited reports generate",
                 "Ad free",
               ]
             : plan.id === "annual"
             ? [
-                "Discount 60%",
-                "Access all modules unlimited",
+                "Discount 70%",
+                "Unlimited calculations & savings (Profit Fee & Monitor)",
+                "Unlimited bulk calculations",
+                "GST & Settlement unlimited",
+                "Unlimited reports generate",
                 "Ad free",
               ]
             : [],
@@ -39,19 +46,23 @@ const Plans = () => {
   }, []);
 
   const handleBuy = async (plan) => {
-  if (!token) {
-    alert("Please login first!");
-    return;
-  }
-  try {
-    const res = await createPayment(token, plan);
-    console.log("Create order response:", res.data);
-    navigate("/payment", { state: { paymentData: { order: res.data.order, plan } } });
-  } catch (err) {
-    console.error("Error creating payment:", err.response?.data || err.message);
-    alert(err.response?.data?.message || "Error creating payment");
-  }
-};
+    if (!token) {
+      alert("Please login first!");
+      return;
+    }
+    try {
+      const res = await createPayment(token, plan);
+      console.log("Create order response:", res.data);
+      navigate("/payment", { state: { paymentData: { order: res.data.order, plan } } });
+    } catch (err) {
+      console.error("Error creating payment:", err.response?.data || err.message);
+      alert(err.response?.data?.message || "Error creating payment");
+    }
+  };
+
+  const handleTryNow = () => {
+    navigate("/profit-fee");
+  };
 
   return (
     <DashboardLayout>
@@ -76,11 +87,25 @@ const Plans = () => {
               <div className="plan-features">
                 <ul>
                   {plan.features.map((feature, index) => (
-                    <li key={index}>{feature}</li>
+                    <li
+                      key={index}
+                      className={
+                        (plan.id === "basic_monthly" && feature === "GST & Settlement unlimited") ||
+                        (plan.id === "free" && (feature === "GST & Settlement" || feature === "Bulk calculations"))
+                          ? "cross-icon"
+                          : ""
+                      }
+                    >
+                      {feature}
+                    </li>
                   ))}
                 </ul>
               </div>
-              {plan.id !== "free" && (
+              {plan.id === "free" ? (
+                <button className="plan-button" onClick={handleTryNow}>
+                  Try Now
+                </button>
+              ) : (
                 <button className="plan-button" onClick={() => handleBuy(plan.id)}>
                   Buy Now
                 </button>

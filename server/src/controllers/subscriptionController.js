@@ -178,9 +178,9 @@ export const getSubscriptionStatus = async (req, res) => {
 export const getPlans = (req, res) => {
   const plans = [
     { id: "free", name: "Free", price: 0, duration: "Lifetime" },
-    { id: "basic_monthly", name: "Profit & Fee Monitor", price: 399, duration: "30 days" },
-    { id: "all_monthly", name: "All Access Monthly", price: 499, duration: "30 days" },
-    { id: "annual", name: "All Access Anually", price: 1799, duration: "365 days" },
+    { id: "basic_monthly", name: "Basic", price: 399, duration: "30 days" },
+    { id: "all_monthly", name: "Pro", price: 499, duration: "30 days" },
+    { id: "annual", name: "Premium", price: 1799, duration: "365 days" },
   ];
   res.json(plans);
 };

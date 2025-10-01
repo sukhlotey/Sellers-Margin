@@ -3,25 +3,19 @@ import dotenv from "dotenv";
 import cors from "cors";
 import connectDB from "./config/db.js";
 import path from "path";
-
-// import authRoutes from "./routes/authRoutes.js";
-// import profitFeeRoutes from "./routes/profitRoutes.js";
-// import gstRoutes from "./routes/gstRoutes.js";
-// import profitRoutes from "./routes/profitRoutes.js";
-// import subscriptionRoutes from "./routes/subscriptionRoutes.js"; // NEW
-// import feedbackRoutes from "./routes/feedbackRoute.js";
-// import adminRoutes from "./routes/adminRoute.js";
  
 dotenv.config({ path: path.resolve(process.cwd(), '.env') });
 
-// Debug environment variables
 
 connectDB();
 
 const app = express();
-app.use(cors());
+
+// app.use(cors());
+app.use(cors({ origin: ['https://sellersense.netlify.app', 'https://sellersense.in','http://localhost:5173'] }));
 app.use(express.json());
 
+app.get('/ping', (req, res) => res.send('OK'));
 // Routes
 const loadRoutes = async () => {
   const authRoutes = (await import("./routes/authRoutes.js")).default;
